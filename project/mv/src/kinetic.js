@@ -6,7 +6,8 @@
 //   drop     falls in from above and bounces       slide    slides in from o.from (-1 left / 1 right)
 //   fade     soft fade and drift (for the fragile lines)
 // o: x, y (baseline), size, face (FACES key), align, fill, under (second ink), reg [dx, dy], glow {color, blur, a},
-//    vertical, rot, dur, out (time it leaves; it exits with the reverse of its entrance), spacing (px)
+//    vertical, rot, dur, out (time it leaves; it exits with the reverse of its entrance), spacing (px),
+//    photo {id, at, zoom, print} (a still inside the letters), fill: null + outline/outlineW (hollow type)
 function kin(ctx, text, t, t0, o) {
   const dur = o.dur ?? .32, k = clamp((t - t0) / dur); if (k <= 0) return;
   const ko = o.out != null ? clamp((t - o.out) / (o.outDur ?? .25)) : 0; if (ko >= 1) return;
@@ -32,7 +33,10 @@ function kin(ctx, text, t, t0, o) {
     else g.fillText(text, x, y);
     g.restore();
   };
-  inked(ctx, draw, { t, fill: o.fill ?? INK.cream, under: o.under, underOff: o.reg, glow: o.glow, blend: 'source-over',
+  // o.photo {id, at, zoom, print}: the letters are filled with a still instead of an ink; o.fill null: outline only
+  const fill = o.photo ? (q => rshot(q, o.photo.id, o.photo.at ?? PHOTOS[o.photo.id].face, o.photo.zoom ?? 1.2, { print: o.photo.print }))
+    : o.fill === null ? null : (o.fill ?? INK.cream);
+  inked(ctx, draw, { t, fill, under: o.under, underOff: o.reg, glow: o.glow, blend: 'source-over',
     alpha: o.fx === 'fade' ? 1 : 1, outline: o.outline, outlineW: o.outlineW, hollow: o.hollow });
 }
 // a huge word travelling across the frame the whole time (behind her, usually)

@@ -60,7 +60,8 @@ function inked(ctx, draw, o) {
       for (let a = 0; a < 12; a++) q.drawImage(c, Math.cos(a * Math.PI / 6) * stroke, Math.sin(a * Math.PI / 6) * stroke);
       if (o.hollow !== false) { q.globalCompositeOperation = 'destination-out'; q.drawImage(c, 0, 0); }
     } else q.drawImage(c, 0, 0);
-    q.globalCompositeOperation = 'source-in'; q.fillStyle = ink; q.fillRect(0, 0, W, H);
+    q.globalCompositeOperation = 'source-in';
+    if (typeof ink === 'function') ink(q); else { q.fillStyle = ink; q.fillRect(0, 0, W, H); }   // a function paints a picture into the letters
     q.globalCompositeOperation = 'destination-out'; q.fillStyle = q.createPattern(speckle(), 'repeat');
     q.save(); q.translate(hash(Math.floor((o.t ?? 0) * 8)) * 512, 0); q.fillRect(-512, 0, W + 512, H); q.restore();
     ctx.save(); ctx.globalCompositeOperation = o.blend ?? 'multiply'; ctx.globalAlpha = o.alpha ?? 1; ctx.drawImage(p, dx, dy); ctx.restore();

@@ -131,6 +131,9 @@ F[11] = (ctx, t, s) => {
 F[12] = (ctx, t, s) => {
   const f = base(ctx, 'rose', t, s, { at: [320, 420], zoom: 1.0 }, { at: [320, 340], zoom: 1.1 });
   sunburst(ctx, W * .5, H * .45, t, 'rgba(217,74,154,.35)');
+  for (let e = 1; e <= 3; e++)                                   // hollow echoes climbing out of the solid word
+    kin(ctx, 'トゲがない', t, at(s.L, 3) + e * .1, { x: W / 2, y: H * .9 - e * 120, size: 380, face: 'loud', fx: 'rise', fill: null,
+      outline: `rgba(246,236,241,${.7 - e * .18})`, outlineW: 3, hollow: true });
   kin(ctx, 'トゲがない', t, at(s.L, 3), { x: W / 2, y: H * .9, size: 380, face: 'loud', fx: 'rise', fill: C.pink, under: C.cream, reg: [8, 7] });
   kin(ctx, 'そう', t, at(s.L, 0), { x: W * .12, y: H * .24, size: 110, face: 'hand', fx: 'fade', fill: C.cream, under: C.pink, reg: [3, 2] });
   paperTag(ctx, W - 400, 60, 330, 130, .03, g => {
@@ -160,7 +163,7 @@ F[14] = (ctx, t, s) => {
   panel(1, null); if (n >= 2) panel(0, C.pink); if (n >= 3) panel(2, C.lilac);
   kin(ctx, 'わたしに', t, at(s.L, 0), { x: W * .5 - 250, y: 150, size: 170, vertical: true, face: 'loud', fx: 'rise', fill: C.cream, under: C.red, reg: [6, 5] });
   kin(ctx, 'なれない', t, at(s.L, 4), { x: W * .5 + 250, y: 150, size: 170, vertical: true, face: 'loud', fx: 'rise', fill: C.cream, under: C.red, reg: [6, 5] });
-  kin(ctx, 'ヒト', t, at(s.L, 8), { x: W * .5, y: H * .95, size: 240, face: 'loud', fx: 'slam', fill: C.red, under: C.cream, reg: [7, 6] });
+  kin(ctx, 'ヒト', t, at(s.L, 8), { x: W * .5, y: H * .92, size: 320, face: 'loud', fx: 'slam', photo: { id: 'sunset', at: [85, 148], zoom: 1.3 }, outline: C.cream, outlineW: 6, hollow: true });
 };
 // 15 激しくふりほどくの (small): hard cuts on hits, torn ink strips; the line small, shaken
 F[15] = (ctx, t, s) => {

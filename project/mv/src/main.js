@@ -46,6 +46,7 @@ window.MV = {
   ready: false,
   frame(t, q = .92) { draw(t); return canvas.toDataURL('image/jpeg', q); },
 };
-Promise.all([loadPhotos(), document.fonts.load(font(100, 900)), document.fonts.load(font(40, 500, FONT_EN))])
+Promise.all([loadPhotos(), document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
+  document.fonts.load(font(100, 900, FONT_HERO)), document.fonts.load(font(40, 500, FONT_EN))])
   .then(() => { MV.ready = true; if (location.hash) draw(+location.hash.slice(1)); })
   .catch(e => console.error('load failed', e));

@@ -11,7 +11,7 @@ function bottomShade(ctx, a = .75) {
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 }
 function caption(ctx, text, x, y, a = 1, align = 'left') {
-  withAlpha(ctx, a, () => { ctx.fillStyle = PAL.fog; ctx.font = font(20, 500, FONT_EN); ctx.textAlign = align; ctx.fillText(text, x, y); });
+  withAlpha(ctx, a, () => { ctx.fillStyle = PAL.fog; ctx.font = font(26, 500, FONT_EN); ctx.textAlign = align; ctx.fillText(text, x, y); });
 }
 // a slow push toward a point of a photo across the scene window, snapping on hits
 function push(ctx, id, pt, t, s, z0, z1, o = {}) {
@@ -81,7 +81,7 @@ function heat(ctx, t, s, id, big) {
   push(ctx, id, 'face', t, s, big ? 1.35 : 1.15, big ? 1.6 : 1.3, { sat: .6, ghost: 6 });
   ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(200,71,95,.55)'; ctx.fillRect(0, 0, W, H); ctx.restore();
   flames(ctx, t, 'rgba(125,36,54,.85)', 'rgba(200,71,95,.8)', big ? 460 : 320);
-  popLine(ctx, s.L, t, { x: W / 2, y: H * .5, size: big ? 200 : 160, color: PAL.paper, tilt: 3, from: 1.7,
+  popLine(ctx, s.L, t, { x: W / 2, y: H * .5, fam: FONT_HERO, weight: 900, size: big ? 200 : 160, color: PAL.paper, tilt: 3, from: 1.7,
     jy: i => Math.sin(t * 9 + i * 1.3) * (big ? 14 : 8), shadow: { dx: 0, dy: 10, color: PAL.roseDeep } });
   if (big) sliceGlitch(ctx, pulse(t, .15), hitIdx(t), 8);
 }
@@ -99,13 +99,41 @@ function sceneIntro(ctx, t, s) {
     else detailCut(ctx, t, 21, { blur: 2, sat: .7, bright: .75 });
     dim(ctx, .35);
   }
-  const title = '私の薔薇には棘がない', bs = DATA.beats.filter(h => h >= firstHit - .01);
-  popLine(ctx, { i: 900, chars: [...title].map((c, i) => [c, bs[i] ?? 99]) }, t,
-    { x: 170, y: H * .5, size: 62, color: PAL.paper, lead: 0, pop: .1, tilt: 0, from: 1.35, vertical: true });
-  withAlpha(ctx, prog(t, 1, 2.5), () => {
-    caption(ctx, 'WATASHI NO BARA NI WA TOGE GA NAI', 270, H * .5 - 290);
-    chip(ctx, 'Flehmann × OTO MAYUMI', 270, H * .5 - 240, 18, PAL.lav, PAL.ink);
-  });
+  titleCard(ctx, t, firstHit, s.t1);
+}
+
+// The title: a drawn rose opens behind it, the characters rise one per beat in a heavy mincho with 薔薇 glowing
+// rose-red, petals drift, then everything holds and is cut away by the first line.
+function titleCard(ctx, t, t0, t1) {
+  if (t < t0 - .4) return;
+  const k = prog(t, t0 - .4, t0 + 3.2), cx = W / 2, cy = H * .47;
+  // glow + rose
+  const g = ctx.createRadialGradient(cx, cy, 20, cx, cy, 620);
+  g.addColorStop(0, `rgba(200,71,95,${.45 * k})`); g.addColorStop(1, 'rgba(200,71,95,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  dim(ctx, .35 * k);
+  withAlpha(ctx, .6 * k, () => rose(ctx, cx, cy, lerp(140, 380, easeOut(k)) * (1 + .03 * pulse(t, .2)), t,
+    { bloom: easeOut(k), colour: PAL.roseDeep, line: 'rgba(244,242,238,.35)' }));
+  petals(ctx, t, t0, 30, 'rgba(200,71,95,.7)');
+  // the title, one character per beat
+  const title = '私の薔薇には棘がない', bs = DATA.beats.filter(h => h >= t0 - .01);
+  const size = 150, rose2 = i => i === 2 || i === 3;
+  ctx.save(); ctx.shadowColor = 'rgba(200,71,95,.9)';
+  const L = { i: 900, chars: [...title].map((c, i) => [c, bs[i] ?? 99]) };
+  ctx.shadowBlur = 40;
+  popLine(ctx, L, t, { x: cx, y: cy + size * .36, size, fam: FONT_HERO, weight: 900, color: i => rose2(i) ? '#e0566f' : PAL.white,
+    lead: 0, pop: .16, tilt: 0, from: 2.2, flashColor: '#ffd9df', spacing: .04 });
+  ctx.restore();
+  // rules and English title once the Japanese is complete
+  const done = bs[title.length - 1] ?? t0 + 4, r = easeOut(prog(t, done, done + .6));
+  if (r > 0) {
+    ctx.strokeStyle = `rgba(244,242,238,${.7 * r})`; ctx.lineWidth = 2;
+    [[-1, cy - size * .85], [1, cy + size * .75]].forEach(([d, y]) => { ctx.beginPath(); ctx.moveTo(cx - 760 * r, y); ctx.lineTo(cx + 760 * r, y); ctx.stroke(); });
+    withAlpha(ctx, r, () => {
+      ctx.fillStyle = PAL.paper; ctx.font = font(64, 500, FONT_EN); ctx.textAlign = 'center';
+      ctx.fillText('My rose has no thorns', cx, cy + size * .75 + 72);
+      caption(ctx, 'Flehmann × OTO MAYUMI', cx, cy + size * .75 + 116, 1, 'center');
+    });
+  }
 }
 
 // ---------- verse 1
@@ -113,7 +141,7 @@ function sceneIntro(ctx, t, s) {
 // 0 強いコントラスト: colour against its negative, split on a diagonal that jumps on the hits
 SCENES[0] = (ctx, t, s) => {
   const size = fitSize(ctx, s.L.text, W * .8, 250), at = [lerp(430, 480, s.k), 300], z = 1.3 * (1 + .05 * pulse(t, .18));
-  const type = col => popLine(ctx, s.L, t, { x: W / 2, y: H * .64, size, color: col, flash: false, from: 1.45, pop: .09, tilt: 0 });
+  const type = col => popLine(ctx, s.L, t, { x: W / 2, y: H * .64, fam: FONT_HERO, weight: 900, size, color: col, flash: false, from: 1.45, pop: .09, tilt: 0 });
   const jumps = diagonal(ctx, t, s, () => { shot(ctx, 'roof', at, z, { sat: .8 }); dim(ctx, .25); type(PAL.paper); },
     () => { negative(ctx, 'roof', at, z); type(PAL.ink); });
   chip(ctx, 'STRONG CONTRAST', 80, 120, 20, PAL.lav, PAL.ink);
@@ -255,7 +283,7 @@ SCENES[12] = (ctx, t, s) => {
   ctx.strokeStyle = 'rgba(232,229,224,.5)'; ctx.lineWidth = 2; ctx.strokeRect(rect[0] - 14, rect[1] - 14, rect[2] + 28, rect[3] + 28);
   const L = s.L, first = { ...L, chars: L.chars.slice(0, 2) }, rest = { ...L, i: L.i + .5, chars: L.chars.slice(3) };
   popLine(ctx, first, t, { x: W * .34, y: 250, size: 54, weight: 300, color: PAL.fog, vertical: true, align: 'top', tilt: 0, from: 1.2, flash: false });
-  popLine(ctx, rest, t, { x: W * .24, y: 190, size: 150, color: PAL.paper, vertical: true, align: 'top', tilt: 2, from: 1.6, shadow: { dx: 6, dy: 6, color: PAL.roseDeep } });
+  popLine(ctx, rest, t, { x: W * .24, y: 190, fam: FONT_HERO, weight: 900, size: 150, color: PAL.paper, vertical: true, align: 'top', tilt: 2, from: 1.6, shadow: { dx: 6, dy: 6, color: PAL.roseDeep } });
   chip(ctx, 'NO THORNS', rect[0] - 14, rect[1] - 34, 18, PAL.rose, PAL.paper);
 };
 
@@ -297,9 +325,9 @@ SCENES[16] = (ctx, t, s) => {
 
 // 17 面白いね: a quiet close-up, thin type
 SCENES[17] = (ctx, t, s) => {
-  push(ctx, 'lying', 'face', t, s, 1.9, 2.1, { blur: 2.5, ghost: 5, sat: .8 });
-  popLine(ctx, s.L, t, { x: W - 160, y: H * .7, size: 64, weight: 300, align: 'right', color: PAL.paper, tilt: 0, from: 1.1, flash: false });
-  caption(ctx, 'FUNNY, ISN\'T IT', W - 160, H * .7 + 44, 1, 'right');
+  push(ctx, 'near', 'face', t, s, 1.25, 1.4, { blur: 1.5, ghost: 5, sat: .85 });
+  popLine(ctx, s.L, t, { x: W - 160, y: H * .84, size: 64, weight: 300, align: 'right', color: PAL.paper, tilt: 0, from: 1.1, flash: false });
+  caption(ctx, 'FUNNY, ISN\'T IT', W - 160, H * .84 + 40, 1, 'right');
 };
 
 // ---------- instrumental montage: detail cuts on every hit over slow stripes
@@ -334,22 +362,22 @@ SCENES[21] = (ctx, t, s) => {
     jx: i => (i - s.L.chars.length / 2) * s.k * 30 });
 };
 
-// 22 楽園（エデン）は遥か遠く: pulling far back from the moon; the words get small
+// 22 楽園（エデン）は遥か遠く: pulling far back from the setting sun; the words get small
 SCENES[22] = (ctx, t, s) => {
-  push(ctx, 'roof', 'moon', t, s, 2.2, 1.0, { sat: .7, blur: 1 });
+  push(ctx, 'sunset', 'sun', t, s, 2.4, 1.0, { sat: .8, blur: 1 });
   dim(ctx, .2);
-  popLine(ctx, s.L, t, { x: W * .66, y: H * .36, size: lerp(96, 44, easeInOut(s.k)), weight: 500, color: PAL.paper, tilt: 0, flash: false, from: 1.2 });
-  caption(ctx, 'EDEN, FAR AWAY', W * .66, H * .36 + 40, 1 - s.k, 'center');
+  popLine(ctx, s.L, t, { x: W * .3, y: H * .3, size: lerp(96, 44, easeInOut(s.k)), weight: 500, color: PAL.paper, tilt: 0, flash: false, from: 1.2 });
+  caption(ctx, 'EDEN, FAR AWAY', W * .3, H * .3 + 40, 1 - s.k, 'center');
 };
 
 // 23 だからこそ綺麗: blur resolving to sharp on her face, sparkles
 SCENES[23] = (ctx, t, s) => {
-  push(ctx, 'rose', 'face', t, s, 1.9, 2.05, { blur: lerp(14, 1, easeOut(s.k)), ghost: 4, sat: .9 });
+  push(ctx, 'lookup', 'face', t, s, 1.2, 1.35, { blur: lerp(14, 1, easeOut(s.k)), ghost: 4, sat: .9 });
   for (let i = 0; i < 26; i++) {
     const a = .5 + .5 * Math.sin(t * 4 + i * 2), x = hr(0, W, i, 1), y = hr(0, H, i, 2), r = hr(3, 9, i, 3) * a;
     ctx.fillStyle = `rgba(244,242,238,${.7 * a})`; ctx.beginPath(); ctx.moveTo(x, y - r * 3); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r * 3); ctx.lineTo(x - r, y); ctx.fill();
   }
-  popLine(ctx, s.L, t, { x: 170, y: H * .5, size: 80, weight: 500, color: PAL.paper, vertical: true, tilt: 0, flash: false });
+  popLine(ctx, s.L, t, { x: W - 170, y: H * .5, size: 80, weight: 500, color: PAL.paper, vertical: true, tilt: 0, flash: false });
 };
 
 // 24 弱さも強さも愛せないのなら: the contrast split again (callback to line 0)
@@ -363,7 +391,7 @@ SCENES[24] = (ctx, t, s) => {
 // 25 わたしが生きる意味はないから: near-black, heavy white type in two lines, her small and dim
 SCENES[25] = (ctx, t, s) => {
   fillBg(ctx, PAL.ink);
-  shot(ctx, 'lying', PHOTOS.lying.face, 1.3, { rect: [W - 560, H - 420, 440, 300], mono: .7, bright: .7 });
+  shot(ctx, 'lookup', PHOTOS.lookup.face, 1.2, { rect: [W - 560, H - 420, 440, 300], mono: .7, bright: .7 });
   const L = s.L, a = { ...L, chars: L.chars.slice(0, 5) }, b = { ...L, i: L.i + .5, chars: L.chars.slice(5) };
   popLine(ctx, a, t, { x: 140, y: H * .38, size: 150, align: 'left', color: PAL.paper, tilt: 0 });
   popLine(ctx, b, t, { x: 140, y: H * .38 + 190, size: 150, align: 'left', color: PAL.paper, tilt: 0 });
@@ -384,7 +412,7 @@ SCENES[26] = (ctx, t, s) => {
 SCENES[27] = (ctx, t, s) => {
   push(ctx, 'roof', 'face', t, s, 1.7, 1.9, { sat: .8, ghost: 4 });
   dim(ctx, .2);
-  popLine(ctx, s.L, t, { x: W / 2, y: H * .74, size: 330, color: PAL.paper, stroke: PAL.ink, strokeW: 20, tilt: 3, from: 1.9 });
+  popLine(ctx, s.L, t, { x: W / 2, y: H * .74, fam: FONT_HERO, weight: 900, size: 330, color: PAL.paper, stroke: PAL.ink, strokeW: 20, tilt: 3, from: 1.9 });
 };
 
 // 28 わたしになれなくても: five strips this time
@@ -426,9 +454,9 @@ SCENES[31] = (ctx, t, s) => {
 
 // ---------- ending
 
-// 32 見納めて: the room, pulling out slowly, colour draining
+// 32 見納めて: the smoking close-up, pulling out slowly, colour draining
 SCENES[32] = (ctx, t, s) => {
-  push(ctx, 'room', 'face', t, s, 1.5, 1.0, { sat: lerp(.8, .3, s.k), kick: 0 });
+  push(ctx, 'smoke', 'face', t, s, 1.5, 1.05, { sat: lerp(.8, .3, s.k), kick: 0 });
   popLine(ctx, s.L, t, { x: W - 180, y: 170, size: 90, weight: 500, color: PAL.paper, vertical: true, align: 'top', tilt: 0, flash: false });
 };
 
@@ -441,7 +469,7 @@ SCENES[33] = (ctx, t, s) => {
 
 // outro: slow crossfades through the stills, draining; the title returns; main.js fades to black
 function sceneOutro(ctx, t, s) {
-  const seq = ['rose', 'roof', 'room', 'sit', 'lying', 'rose'], dur = (s.t1 - s.t0) / seq.length;
+  const seq = ['sunset', 'rose', 'near', 'roof', 'lookup', 'room', 'smoke', 'rose'], dur = (s.t1 - s.t0) / seq.length;
   const j = Math.min(seq.length - 1, Math.floor((t - s.t0) / dur)), k = ((t - s.t0) % dur) / dur;
   const draw = (id, kk, a) => shot(ctx, id, PHOTOS[id].face, lerp(1.2, 1.35, kk), { alpha: a, mono: lerp(.3, 1, s.k), bright: lerp(.9, .5, s.k), blur: lerp(0, 4, s.k) });
   fillBg(ctx, PAL.ink);

@@ -6,8 +6,10 @@ const PAL = {
   lav: '#a99bd6', lavDeep: '#5d4f96', cyan: '#9fc9d4', pink: '#d9b3c6', rose: '#c8475f', roseDeep: '#7d2436',
 };
 const IRIS = ['#a99bd6', '#9fc9d4', '#d9b3c6', '#b8aee0'];
-const FONT = '"Noto Sans CJK JP", "Noto Sans JP", sans-serif';
-const FONT_EN = '"Noto Sans", "Noto Sans CJK JP", sans-serif';
+// mincho for the lyrics (Shippori Mincho B1), a heavy old-style mincho for titles and hero words, italic serif for English
+const FONT = '"Shippori Mincho B1", "Noto Serif CJK JP", serif';
+const FONT_HERO = '"Zen Old Mincho", "Shippori Mincho B1", serif';
+const FONT_EN = '"Cormorant Garamond", "Shippori Mincho B1", serif';
 
 // ---- math & easing
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -45,10 +47,10 @@ function irisGradient(ctx, x0, y0, x1, y1, shift = 0) {
 }
 
 // ---- typography
-function font(size, weight = 900, fam = FONT) { return `${weight} ${size}px ${fam}`; }
-function measure(ctx, text, size, weight = 900, fam = FONT) { ctx.font = font(size, weight, fam); return ctx.measureText(text).width; }
+function font(size, weight = 800, fam = FONT) { return `${fam === FONT_EN ? 'italic ' : ''}${weight} ${size}px ${fam}`; }
+function measure(ctx, text, size, weight = 800, fam = FONT) { ctx.font = font(size, weight, fam); return ctx.measureText(text).width; }
 // size that makes `text` fit `maxW`, capped at `maxSize`
-function fitSize(ctx, text, maxW, maxSize, weight = 900, fam = FONT) {
+function fitSize(ctx, text, maxW, maxSize, weight = 800, fam = FONT) {
   const w = measure(ctx, text, 100, weight, fam); return Math.min(maxSize, 100 * maxW / Math.max(1, w));
 }
 
@@ -58,7 +60,7 @@ function fitSize(ctx, text, maxW, maxSize, weight = 900, fam = FONT) {
 //   the sung time), pop (s), tilt (deg), vertical, spacing, shadow {dx, dy, color}, hide (fn char index -> bool)
 function popLine(ctx, L, t, o) {
   const size = o.size, chars = L.chars, sp = o.spacing ?? 0;
-  ctx.font = font(size, o.weight ?? 900, o.fam ?? FONT);
+  ctx.font = font(size, o.weight ?? 800, o.fam ?? FONT);
   const widths = chars.map(([c]) => c === ' ' || c === '　' ? size * .35 : ctx.measureText(c).width + sp * size);
   const total = widths.reduce((a, b) => a + b, 0);
   const boxes = [];
@@ -87,7 +89,7 @@ function popLine(ctx, L, t, o) {
 
 // label chip: small English/number type in a filled box (graphic-design garnish)
 function chip(ctx, text, x, y, size, bg, fg, align = 'left') {
-  ctx.font = font(size, 800, FONT_EN);
+  ctx.font = font(size * 1.25, 600, FONT_EN);
   const w = ctx.measureText(text).width + size * .8, h = size * 1.35;
   const x0 = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
   ctx.fillStyle = bg; ctx.fillRect(x0, y - h * .78, w, h);
@@ -100,7 +102,7 @@ function ticker(ctx, text, y, size, speed, t, fg, bg, angle = 0, h) {
   ctx.save(); ctx.translate(W / 2, y); ctx.rotate(angle);
   const bh = h ?? size * 1.6;
   if (bg) { ctx.fillStyle = bg; ctx.fillRect(-W * 1.5, -bh / 2, W * 3, bh); }
-  ctx.font = font(size, 900); ctx.fillStyle = fg; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.font = font(size, 800); ctx.fillStyle = fg; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
   const unit = ctx.measureText(text).width;
   let x = -W * 1.5 - ((t * speed) % unit + unit) % unit;
   while (x < W * 1.5) { ctx.fillText(text, x, size * .04); x += unit; }

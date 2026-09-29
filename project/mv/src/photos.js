@@ -1,6 +1,6 @@
 // photos.js: full illustrations (with their own backgrounds) used as film stills. The camera pans and pushes over
 // them; softness from upscaling is kept on purpose (blur, bloom, chromatic smear).
-const PHOTO_SRC = { room: 'room.webp', triptych: 'rose_triptych.webp', roof: 'rooftop.webp' };
+const PHOTO_SRC = { room: 'room.webp', triptych: 'rose_triptych.webp', roof: 'rooftop.webp', faces: 'faces.webp' };
 const PHOTO_IMG = {};
 // crops in source pixels, and the face / points of interest inside each crop
 const PHOTOS = {
@@ -10,11 +10,17 @@ const PHOTOS = {
   lying: { src: 'triptych', crop: [732, 2, 802, 442],    face: [175, 250], hands: [250, 330], panda: [650, 150] },
   sit:   { src: 'triptych', crop: [732, 452, 802, 570],  face: [262, 115], neon: [570, 60], legs: [420, 360] },
   roof:  { src: 'roof',     crop: [0, 0, 1536, 1024],    face: [470, 290], moon: [1320, 300], city: [1100, 250] },
+  // the close-up sheet (2x2)
+  sunset: { src: 'faces',   crop: [2, 2, 762, 506],      face: [505, 100], sun: [85, 148] },
+  near:   { src: 'faces',   crop: [770, 2, 764, 506],    face: [380, 200], rings: [430, 420] },
+  lookup: { src: 'faces',   crop: [2, 516, 762, 506],    face: [330, 190] },
+  smoke:  { src: 'faces',   crop: [770, 516, 764, 506],  face: [330, 130], tip: [245, 66] },
 };
 // detail shots for montage cuts: [photo, point, zoom]
 const DETAILS = [['rose', 'rose', 2.2], ['rose', 'rings', 2.4], ['roof', 'moon', 2.0], ['room', 'cup', 2.2], ['sit', 'neon', 1.8],
-  ['lying', 'panda', 1.7], ['room', 'panda', 2.0], ['room', 'monitor', 1.9], ['lying', 'hands', 1.9], ['roof', 'city', 1.6]];
-const CUTS = ['rose', 'roof', 'room', 'lying', 'sit'];
+  ['lying', 'panda', 1.7], ['room', 'panda', 2.0], ['room', 'monitor', 1.9], ['lying', 'hands', 1.9], ['roof', 'city', 1.6],
+  ['sunset', 'sun', 1.6], ['smoke', 'tip', 1.8], ['near', 'rings', 1.6], ['lookup', 'face', 1.5], ['near', 'face', 1.5]];
+const CUTS = ['rose', 'roof', 'room', 'lying', 'sit', 'sunset', 'near', 'lookup', 'smoke'];
 
 function loadPhotos() {
   return Promise.all(Object.entries(PHOTO_SRC).map(([k, f]) => new Promise((res, rej) => {

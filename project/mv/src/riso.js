@@ -65,6 +65,10 @@ function inked(ctx, draw, o) {
     q.save(); q.translate(hash(Math.floor((o.t ?? 0) * 8)) * 512, 0); q.fillRect(-512, 0, W + 512, H); q.restore();
     ctx.save(); ctx.globalCompositeOperation = o.blend ?? 'multiply'; ctx.globalAlpha = o.alpha ?? 1; ctx.drawImage(p, dx, dy); ctx.restore();
   };
+  if (o.under) plate(o.under, o.underOff?.[0] ?? 8, o.underOff?.[1] ?? 6, 0);     // second ink, out of register
+  if (o.glow) { ctx.save(); ctx.filter = `blur(${o.glow.blur ?? 24}px)`; ctx.globalAlpha = o.glow.a ?? .6; ctx.globalCompositeOperation = 'screen';
+    const gl = makeCanvas(W, H), q = gl.getContext('2d'); q.drawImage(c, 0, 0); q.globalCompositeOperation = 'source-in'; q.fillStyle = o.glow.color; q.fillRect(0, 0, W, H);
+    ctx.drawImage(gl, 0, 0); ctx.restore(); }
   if (o.fill) plate(o.fill, 0, 0, 0);
   if (o.outline) plate(o.outline, o.reg?.[0] ?? 5, o.reg?.[1] ?? 4, o.outlineW ?? 8);
 }

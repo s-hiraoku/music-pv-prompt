@@ -24,7 +24,7 @@ function loadRiso() {
 // Like shot() but on the riso print; `layer` 'full' (whole print) or 'fg' (character only). `at` is in the same
 // source-crop coordinates as PHOTOS, so all the points of interest still apply.
 function rshot(ctx, id, at, zoom, o = {}) {
-  const R = (o.print ? PRINT : RISO)[id]; if (!R) return;
+  const R = (o.set ?? (o.print ? PRINT : RISO))[id]; if (!R) return;
   const im = o.layer === 'fg' ? R.fg : R.full, [rx, ry, rw, rh] = o.rect ?? [0, 0, W, H];
   const s = Math.max(rw / im.width, rh / im.height) * zoom;
   const pos = o.pos ?? [rx + rw / 2, ry + rh / 2];

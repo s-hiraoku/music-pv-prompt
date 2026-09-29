@@ -25,7 +25,7 @@ async function openPage() {
   page.on('console', m => { if (m.type() === 'error') console.error('[page]', m.text()); });
   page.on('pageerror', e => console.error('[page error]', e.message));
   await page.setViewport({ width: 1920, height: 1080 });
-  await page.goto('file://' + path.join(here, 'index.html') + (args.style ? `?style=${args.style}` : ''));
+  await page.goto('file://' + path.join(here, 'index.html') + (args.style ? `?style=${args.style}` : args.cut ? `?cut=${args.cut}` : ''));
   await page.waitForFunction('window.MV && window.MV.ready === true', { timeout: 60000 });
   return { browser, page };
 }
@@ -57,7 +57,7 @@ if (args.stills) {
 } else if (args.frames) {
   const [a, b] = String(args.range || `0:${DURATION}`).split(':').map(Number);
   const n0 = Math.round(a * FPS), n1 = Math.min(Math.round(b * FPS), Math.floor(DURATION * FPS));
-  const dir = path.join(here, args.style ? `out/frames_${args.style}` : 'out/frames'); fs.mkdirSync(dir, { recursive: true });
+  const dir = path.join(here, args.style ? `out/frames_${args.style}` : args.cut ? `out/frames_${args.cut}` : 'out/frames'); fs.mkdirSync(dir, { recursive: true });
   const todo = [];
   for (let n = n0; n < n1; n++) if (!fs.existsSync(path.join(dir, `${String(n).padStart(5, '0')}.jpg`))) todo.push(n);
   const workers = +(args.workers || 4);
@@ -76,7 +76,7 @@ if (args.stills) {
 } else if (args.encode) {
   const out = path.resolve(here, args.out || 'out/mv.mp4');
   // start at the first painted frame; the audio is cut from the same time so a partial render stays in sync
-  const fdir = path.join(here, args.style ? `out/frames_${args.style}` : 'out/frames');
+  const fdir = path.join(here, args.style ? `out/frames_${args.style}` : args.cut ? `out/frames_${args.cut}` : 'out/frames');
   const first = Math.min(...fs.readdirSync(fdir).filter(f => f.endsWith('.jpg')).map(f => parseInt(f)));
   const p = spawn('ffmpeg', ['-loglevel', 'error', '-stats', '-y', '-framerate', String(FPS), '-start_number', String(first),
     '-i', path.join(fdir, '%05d.jpg'), '-ss', (first / FPS).toFixed(4), '-i', AUDIO, '-map', '0:v', '-map', '1:a', ...(args.preview ? ['-vf', 'scale=1280:-2'] : []), '-c:v', 'libx264', '-preset', 'slow', '-crf', args.preview ? '28' : '17', '-pix_fmt', 'yuv420p',

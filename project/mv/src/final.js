@@ -4,7 +4,7 @@
 // the same stills (PRINT) is the other accent: split frames, strobes, flashes, whole scenes on the burn lines.
 // Loaded after scenes.js / riso.js / kinetic.js and replaces their scenes unless a style lab (?style=) is open.
 (() => {
-if (new URLSearchParams(location.search).get('style')) return;
+if (new URLSearchParams(location.search).get('style') || new URLSearchParams(location.search).get('cut')) return;
 const F = {};
 const out = s => s.t1 - .25;                                   // when words leave
 const C = INK;                                                 // cream, pink, red, navy, lilac (sampled from the stills)

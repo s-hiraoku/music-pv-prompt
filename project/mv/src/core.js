@@ -23,6 +23,7 @@ const FACES = {
   pixel:   { fam: '"DotGothic16", monospace', w: 400 },                        // glitch, digital, time
   label:   { fam: '"Zen Kaku Gothic New", sans-serif', w: 900 },               // warnings, tape, tiles
   mono:    { fam: '"DM Mono", monospace', w: 500 },                            // small technical labels
+  en:      { fam: '"Bodoni Moda", serif', w: 600 },                            // English glosses (italic face)
 };
 // which face each lyric line is set in
 const LINE_FACE = {

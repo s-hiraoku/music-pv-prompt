@@ -69,6 +69,15 @@ else:
     spans = placeholder_spans(); source = 'placeholder'
     print('no ASR result: placeholder timing')
 
+# forced alignment on the separated vocal (analysis/align_mms.py) wins over the ASR pass when present
+mms_path = P('analysis/aligned_mms.json')
+if os.path.exists(mms_path):
+    mms = json.load(open(mms_path, encoding='utf-8'))
+    for k, v in mms.items():
+        char_times[int(k)] = v['starts']; spans[int(k)] = (v['starts'][0], v['end'] + .15)
+    source = 'mms-forced-alignment'
+    print('using forced alignment from aligned_mms.json')
+
 fix_path = P('analysis/line_fix.json')
 fixes = json.load(open(fix_path)) if os.path.exists(fix_path) else {}
 

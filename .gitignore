@@ -14,3 +14,6 @@ project/analysis/timing.json
 project/mv/src/data.js
 project/mv/node_modules/
 project/mv/out/
+project/analysis/emission.pt
+project/analysis/aligned.json
+project/analysis/aligned_mms.json

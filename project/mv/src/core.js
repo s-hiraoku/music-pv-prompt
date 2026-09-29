@@ -83,7 +83,8 @@ function fitSize(ctx, text, maxW, maxSize, weight = 800, fam = FONT) {
 function popLine(ctx, L, t, o) {
   const size = o.size, chars = L.chars, sp = o.spacing ?? 0, face = o.fam ? { fam: o.fam, w: o.weight ?? 800 } : faceOf(L);
   ctx.font = font(size, face.w, face.fam);
-  const widths = chars.map(([c]) => c === ' ' || c === '　' ? size * .35 : ctx.measureText(c).width + sp * size);
+  const sx = o.sx ?? 1;          // horizontal stretch (layout follows it)
+  const widths = chars.map(([c]) => (c === ' ' || c === '　' ? size * .35 : ctx.measureText(c).width + sp * size) * sx);
   const total = widths.reduce((a, b) => a + b, 0);
   const boxes = [];
   let cx = o.vertical ? o.x : o.align === 'left' ? o.x : o.align === 'right' ? o.x - total : o.x - total / 2;
@@ -95,11 +96,19 @@ function popLine(ctx, L, t, o) {
     if (k >= 0 && !(o.hide && o.hide(i)) && c.trim()) {
       const s = k < 1 ? lerp(o.from ?? 1.7, 1, backOut(clamp(k))) : 1;
       const rot = (o.tilt ?? 4) * (hash(L.i, i) - .5) * Math.PI / 180;
-      ctx.save(); ctx.translate(bx + (o.jx ? o.jx(i) : 0), by + (o.jy ? o.jy(i) : 0)); ctx.rotate(rot); ctx.scale(s, s);
+      const es = o.scaleOf ? o.scaleOf(i, k) : 1;
+      ctx.save(); ctx.translate(bx + (o.jx ? o.jx(i) : 0), by + (o.jy ? o.jy(i) : 0)); ctx.rotate(rot + (o.rotOf ? o.rotOf(i) : 0));
+      ctx.scale(s * es * sx, s * es); if (o.skew) ctx.transform(1, 0, o.skew, 1, 0, 0);
       ctx.textAlign = 'center'; ctx.textBaseline = o.vertical ? 'middle' : 'alphabetic';
+      if (o.echo) for (let e = o.echo.n; e >= 1; e--) {       // trailing outlined copies
+        ctx.save(); ctx.globalAlpha *= o.echo.alpha ?? .6; ctx.lineWidth = o.echo.w ?? size * .02;
+        ctx.strokeStyle = typeof o.echo.color === 'function' ? o.echo.color(e, i) : o.echo.color;
+        ctx.strokeText(c, o.echo.dx * e, o.echo.dy * e); ctx.restore();
+      }
+      if (o.glow) { ctx.shadowColor = o.glow.color; ctx.shadowBlur = o.glow.blur; }
       if (o.shadow) { ctx.fillStyle = o.shadow.color; ctx.fillText(c, o.shadow.dx, o.shadow.dy); }
       if (o.stroke) { ctx.lineJoin = 'round'; ctx.lineWidth = o.strokeW ?? size * .12; ctx.strokeStyle = o.stroke; ctx.strokeText(c, 0, 0); }
-      ctx.fillStyle = k < .35 && o.flash !== false ? (o.flashColor ?? PAL.white) : (typeof o.color === 'function' ? o.color(i) : o.color);
+      ctx.fillStyle = k < .35 && o.flash !== false ? (o.flashColor ?? PAL.white) : (typeof o.color === 'function' ? o.color(i, ctx, size) : o.color);
       if (o.outlineOnly) { ctx.lineWidth = size * .035; ctx.strokeStyle = ctx.fillStyle; ctx.strokeText(c, 0, 0); } else ctx.fillText(c, 0, 0);
       ctx.restore();
     }

@@ -48,6 +48,8 @@ window.MV = {
 };
 Promise.all([loadPhotos(), document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
   document.fonts.load(font(100, 900, FONT_HERO)), document.fonts.load(font(40, 500, FONT_EN)),
-  ...Object.values(FACES).map(f => document.fonts.load(font(100, f.w, f.fam), 'あ漢A0'))])
+  ...Object.values(FACES).map(f => document.fonts.load(font(100, f.w, f.fam), 'あ漢A0')),
+  ...['800 100px "Kaisei Tokumin"', 'italic 700 100px "Bodoni Moda"', '400 100px "Reggae One"', '400 100px "Stick"', '400 100px "Train One"']
+    .map(f => document.fonts.load(f, 'あ漢A0'))])
   .then(() => { MV.ready = true; if (location.hash) draw(+location.hash.slice(1)); })
   .catch(e => console.error('load failed', e));

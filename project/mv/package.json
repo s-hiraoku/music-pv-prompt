@@ -1,0 +1,7 @@
+{
+  "name": "rose-mv",
+  "private": true,
+  "type": "module",
+  "description": "Music video for 私の薔薇には棘がない: code-drawn typography and motion graphics rendered frame by frame",
+  "dependencies": { "puppeteer-core": "^25.11.0" }
+}

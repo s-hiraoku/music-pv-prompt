@@ -3,3 +3,14 @@ project/comp/node_modules/
 project/comp/out/
 __pycache__/
 *.npy
+# derived from the song, lyrics or character art: regenerate locally, keep out of git
+project/design/sprites/
+project/design/sprites_hd/
+project/design/sprites_preview.jpg
+project/design/ref/
+project/analysis/asr_raw.json
+project/analysis/asr.log
+project/analysis/timing.json
+project/mv/src/data.js
+project/mv/node_modules/
+project/mv/out/

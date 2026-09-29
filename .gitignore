@@ -1,0 +1,27 @@
+project/assets/
+project/comp/node_modules/
+project/comp/out/
+__pycache__/
+*.npy
+# derived from the song, lyrics or character art: regenerate locally, keep out of git
+project/design/sprites/
+project/design/sprites_hd/
+project/design/sprites_preview.jpg
+project/design/ref/
+project/analysis/asr_raw.json
+project/analysis/asr.log
+project/analysis/timing.json
+project/mv/src/data.js
+project/mv/node_modules/
+project/mv/out/
+project/analysis/emission.pt
+project/analysis/aligned.json
+project/analysis/aligned_mms.json
+project/design/riso/
+project/design/riso_check.jpg
+project/design/riso_zoom.jpg
+project/design/cut/
+project/design/splash/
+project/design/splash_check.jpg
+project/design/depth/
+project/design/depth_check.jpg

@@ -1,9 +1,9 @@
 // live.js: "living stills". A still is drawn through a small WebGL shader that shifts every pixel by its depth
 // (Depth Anything V2 map) as the camera drifts, so near and far separate like a real camera move, and sways the
 // hair (a mask from design/live.py) in a slow wind. On top, in 2D: the city lights twinkle and a cigarette smokes.
-// Only used by the fresh cut (index.html?cut=fresh&live=1).
+// Used by the fresh cut (index.html?cut=fresh&live=1) for every still.
 const LIVE = { ready: false, tex: {}, lights: {} };
-const LIVE_IDS = ['roof', 'smoke'];
+const LIVE_IDS = ['room', 'rose', 'lying', 'sit', 'roof', 'sunset', 'near', 'lookup', 'smoke'];
 
 function loadLive() {
   const gl0 = makeCanvas(W, H);
@@ -44,19 +44,20 @@ function loadLive() {
 // Returns the uv view rect so overlays can map points: screen = ((u - view.x) / view.w * W, (v - view.y) / view.h * H).
 function liveShot(ctx, id, t, cam, o = {}) {
   const T = LIVE.tex[id], gl = LIVE.gl, P = PHOTOS[id], s = T.w / P.crop[2];
-  const sc = Math.max(W / T.w, H / T.h) * cam.zoom, vw = W / (T.w * sc), vh = H / (T.h * sc);
-  const vx = clamp(cam.at[0] * s / T.w - vw / 2, .02, 1 - vw - .02), vy = clamp(cam.at[1] * s / T.h - vh / 2, .02, 1 - vh - .02);
-  gl.viewport(0, 0, W, H); gl.useProgram(LIVE.pr);
+  const [rx, ry, rw, rh] = (o.rect ?? [0, 0, W, H]).map(Math.round);       // a split-screen cell or the whole frame
+  const sc = Math.max(rw / T.w, rh / T.h) * cam.zoom, vw = rw / (T.w * sc), vh = rh / (T.h * sc);
+  const vx = clamp(cam.at[0] * s / T.w - vw / 2, .02, Math.max(.02, 1 - vw - .02)), vy = clamp(cam.at[1] * s / T.h - vh / 2, .02, Math.max(.02, 1 - vh - .02));
+  gl.viewport(0, 0, rw, rh); gl.useProgram(LIVE.pr);
   [T.img, T.spl, T.dep, T.hair].forEach((tx, i) => { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, tx); });
   gl.uniform4f(LIVE.u('view'), vx, vy, vw, vh);
   gl.uniform2f(LIVE.u('shift'), cam.shift[0], cam.shift[1]);
   gl.uniform1f(LIVE.u('focus'), cam.focus ?? .55); gl.uniform1f(LIVE.u('t'), t);
   gl.uniform1f(LIVE.u('colour'), o.colour ?? 1); gl.uniform1f(LIVE.u('wind'), o.wind ?? .0025);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  ctx.drawImage(LIVE.canvas, 0, 0);
-  return { x: vx, y: vy, w: vw, h: vh };
+  ctx.drawImage(LIVE.canvas, 0, H - rh, rw, rh, rx, ry, rw, rh);           // GL draws from the bottom-left corner
+  return { x: vx, y: vy, w: vw, h: vh, rect: [rx, ry, rw, rh] };
 }
-const toScreen = (view, u, v) => [(u - view.x) / view.w * W, (v - view.y) / view.h * H];
+const toScreen = (view, u, v) => { const [rx, ry, rw, rh] = view.rect ?? [0, 0, W, H]; return [rx + (u - view.x) / view.w * rw, ry + (v - view.y) / view.h * rh]; };
 
 // far lights twinkle: each light breathes on its own slow cycle, a few sparkle on the hits
 function twinkle(ctx, id, view, t, shift, o = {}) {
@@ -86,4 +87,18 @@ function smoke(ctx, view, t, tipUV, o = {}) {
   const e = .6 + .4 * Math.sin(t * 7) * Math.sin(t * 3.3); const g = ctx.createRadialGradient(x0, y0, 0, x0, y0, 22);
   g.addColorStop(0, `rgba(255,120,60,${.7 * e})`); g.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = g; ctx.fillRect(x0 - 22, y0 - 22, 44, 44);
   ctx.restore();
+}
+
+// candle flames and a warm glow (the rose still), sun bloom (sunset): small living touches drawn over the view
+function candles(ctx, view, t, pts) {
+  ctx.save(); ctx.globalCompositeOperation = 'screen';
+  pts.forEach(([u, v], i) => { const [x, y] = toScreen(view, u, v), f = .7 + .3 * Math.sin(t * 11 + i * 3) * Math.sin(t * 4.3 + i);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 120 * f); g.addColorStop(0, `rgba(255,190,110,${.45 * f})`); g.addColorStop(1, 'rgba(255,140,60,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - 130, y - 130, 260, 260); });
+  ctx.restore();
+}
+function sunGlow(ctx, view, t, uv) {
+  const [x, y] = toScreen(view, uv[0], uv[1]), r = 260 + 30 * Math.sin(t * .8);
+  ctx.save(); ctx.globalCompositeOperation = 'screen'; const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, 'rgba(255,200,140,.45)'); g.addColorStop(1, 'rgba(255,120,80,0)'); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.restore();
 }

@@ -4,7 +4,7 @@
 #   python3 design/live.py   -> design/depth/<id>_hair.png, design/depth/<id>_lights.json
 import json, numpy as np, cv2
 from PIL import Image, ImageFilter
-for key in ['roof', 'smoke']:
+for key in ['room', 'rose', 'lying', 'sit', 'roof', 'sunset', 'near', 'lookup', 'smoke']:
     rgb = np.asarray(Image.open(f'design/cut/{key}_full.jpg').convert('RGB'), np.float32) / 255
     fg = np.asarray(Image.open(f'design/cut/{key}_fg.png').getchannel('A'), np.float32) / 255
     depth = np.asarray(Image.open(f'design/depth/{key}_depth.png'), np.float32) / 255

@@ -20,6 +20,7 @@ function windowAt(t) {
 }
 
 function draw(t) {
+  window.CUR_T = t;                // scenes' helpers (living stills) read the frame time from here
   const w = windowAt(t);
   const s = { ...w, lt: w.L ? t - w.L.start : t, k: prog(t, w.t0, w.t1) };
   ctx.save();
@@ -40,6 +41,7 @@ function draw(t) {
   const v = ctx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(10,8,14,.45)');
   ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  if (window.afterScene) window.afterScene(ctx, t);   // overlays that stay crisp (the fresh cut's frame marks)
   const fade = Math.max(1 - prog(t, 0, .8), prog(t, DATA.duration - 2.5, DATA.duration));
   if (fade > 0) { ctx.fillStyle = `rgba(10,8,14,${fade})`; ctx.fillRect(0, 0, W, H); }
 }

@@ -28,6 +28,15 @@ AIエージェント(Claude Code、Coworkなど)にミュージックビデオ�
 - ヘッドレスブラウザ(JavaScriptアニメーションのフレーム書き出し用)
 - 任意: 効果音用の音声API(例: ElevenLabs)
 
+### 生成APIがない場合
+
+画像・動画生成APIがなくても、[ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase) を使えば MV を作れます。キャラや背景を p5.js と p5.brush のコードで描き、ヘッドレスChromeでフレームを書き出して、ffmpegで音源と合わせる方式です(実例: [PDoomVideo](https://github.com/JohnHeibel/PDoomVideo))。必要なのは Node.js、Chrome、ffmpeg だけです。
+
+テンプレートの PART D 末尾「コードアニメーション・ルート」に、この方式に切り替えたときの各フェーズの進め方を書いています。Phase 0 で生成APIが使えないと分かった場合も、エージェントがこのルートに切り替えます。
+
+- 得意: 筆タッチの2Dアニメ、キャラの表情や動き、音に合わせたタイミング
+- 苦手: 写実的な人物、自然な全身のダンス、本格的な口パク
+
 ## 制作フロー
 
 ★は承認ポイントです。`checkpoint` モードではここで止まり、確認を待ちます。

@@ -58,6 +58,7 @@ PART C〜F は prompt/template.md と同じなので省略している。
 
 - Image generation: fal.ai (FAL_KEY)。使用モデルは Phase 0 で選定
 - Video generation: fal.ai 経由の Seedance 2.5 (音声リファレンスによる口パクに対応しているかは Phase 0 で確認)。ドキュメント: ./docs/seedance.md (要記入)
+- Code-drawn animation kit: ClaudeAnimationBase (https://github.com/JohnHeibel/ClaudeAnimationBase)。fal.ai が使えない、または予算が足りない場合はこれで全編を作る
 - Sound design / voice: ElevenLabs (ELEVENLABS_API_KEY)。ドキュメント: ./docs/elevenlabs.md (要記入)
 - Local tools: ffmpeg, Node.js, Python, Playwright/Chromium
 - Reference folders / docs / skills: 過去作のフォルダ(要記入: パス)、参考資料集のスキル(要記入: スキル名)、JSで曲を扱うスキル(要記入: スキル名)

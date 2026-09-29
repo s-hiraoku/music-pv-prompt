@@ -70,6 +70,7 @@ List only what actually works in this environment. Anything not listed here does
 
 - Image generation: {{例: fal.ai (APIキーは環境変数 FAL_KEY)。使用モデル名}}
 - Video generation: {{例: fal.ai 経由の動画生成モデル。音声リファレンス対応の有無}}
+- Code-drawn animation kit: {{例: ClaudeAnimationBase (https://github.com/JohnHeibel/ClaudeAnimationBase)。画像・動画生成APIの代わりに、キャラや背景をコードで描く。使わない場合は「なし」}}
 - Sound design / voice: {{例: ElevenLabs (ELEVENLABS_API_KEY)}}
 - Local tools: {{例: ffmpeg, Node.js, Python, Playwright/Chromium}}
 - Reference folders / docs / skills: {{パスと中身の説明}}
@@ -116,6 +117,7 @@ project/
 2. Measure actual cost and latency per call. Estimate total cost for the whole video.
 3. Record each video model's real constraints: max clip length, supported inputs (image reference, audio reference, first/last frame), and lip-sync quality.
 4. If the estimate exceeds the budget in A8, propose a cheaper plan before continuing.
+5. If no image/video generation API is listed, none works, or the budget cannot cover one, switch to the code-animation route (see "Code-animation route" at the end of PART D) and state the switch at the next checkpoint.
 
 ### Phase 1: 音源の解析 / Audio analysis
 1. Produce word-level lyric timestamps (e.g. forced alignment with WhisperX or similar). Correct them by listening/inspecting waveforms where alignment is uncertain.
@@ -184,6 +186,26 @@ project/
 
 ★ Deliverables: final video, contact sheet, self-review against PART E, cost summary.
 
+### コードアニメーション・ルート / Code-animation route (no generation API)
+
+Use this route when image/video generation is unavailable or unaffordable (see Phase 0), or when A5 asks for a code-drawn look. Every picture is drawn in code, rendered frame by frame in a headless browser, and joined with the audio by ffmpeg. No generation API is needed. The default kit is ClaudeAnimationBase (https://github.com/JohnHeibel/ClaudeAnimationBase): p5.js + p5.brush, a character system with views/emotions/mouths, a timeline with transitions, and a renderer for stills, contact sheets and MP4. A music video built this way: https://github.com/JohnHeibel/PDoomVideo.
+
+Setup:
+- Clone the kit into the project (e.g. as `comp/`) and read its `ANIMATION_GUIDE.md` in full before drawing anything. Follow its rules (brush medium, flat 2D, boiling linework, something happens in every shot, transitions at every seam, timing for the viewer) except where this brief says otherwise.
+- The kit's default character, Clawd, is the Claude Code mascot. Use it only if A4 asks for it; otherwise design the protagonist from A4 in the same system (views, emotions, mouths).
+
+How the phases change:
+- Phase 0: run `npm install` and render the kit's demo to confirm Chrome, WebGL and ffmpeg work. Measure seconds per frame and estimate total render time in place of API cost. Without a GPU, use `--soft-gl` and avoid or limit watercolour fills, which are slow.
+- Phase 1: unchanged. Also set `PROJECT.bpm`, `offset` (first downbeat) and `audio` in `src/config.js` from `timing.json`, so every idle and dance locks to the song.
+- Phase 2: style frames are stills rendered from code, not model images. The three directions may vary palette, brushes, line quality, and how far to move from the kit's default look.
+- Phase 3: character sheets are drawn in code and rendered as sheets (views, emotions, poses). Reference images in A4 guide the design; do not trace protected works.
+- Phase 4: in `shots.json`, the generation method is `code`, with the scene file each shot lives in.
+- Phase 5: the animatic is a low-resolution or held-pose render of the scene code with the real audio.
+- Phase 6 is replaced by writing each shot as scene code. Independent sections can be built in parallel (e.g. by subagents), all following `ANIMATION_GUIDE.md` and STYLE.md. Check every shot with contact sheets and frame strips before accepting it.
+- Singing shots: drive mouth shapes from the word timings in `timing.json` (open on word starts and held vowels, close on rests), or act the meaning of the line instead of showing singing. Apply the ±2 frame sync target from PART E to mouth opens.
+- Phase 7: the kit's guide bans on-screen text. In this brief, lyric typography planned in `shots.json` overrides that rule. Paint lyrics in the same brush medium (e.g. with the kit's lettering helpers) so they belong to the picture. Outside planned lyric text, the no-text rule stands.
+- Phase 8: unchanged. Render the final at full resolution with the kit's renderer, then verify against PART E.
+
 ---
 
 ## PART E: 検証と品質基準 / Verification & quality bar
@@ -207,6 +229,7 @@ project/
 - Video model cannot do audio-referenced lip sync → use singing shots sparingly, frame wider, use side angles, silhouettes, or cut away on the vocal.
 - Character drift → shorten the shot, regenerate from a tighter reference, or cover with an insert.
 - Budget pressure → replace generated video with code-driven motion graphics for inserts and text shots.
+- No image/video generation API, or none affordable → make the whole video on the code-animation route (end of PART D).
 - Any tool unavailable → closest alternative, recorded in LOG.md.
 
 ---

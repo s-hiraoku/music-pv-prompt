@@ -169,7 +169,126 @@ const RISO_SCENES = {
       ctx.save(); ctx.translate(hr(200, W - 200, hi, i), hr(150, H - 150, hi, i, 1) - age * 600); ctx.rotate(hr(-.6, .6, hi, i, 2) + age * 3);
       ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = [INK.pink, INK.navy, INK.red][i % 3]; ctx.fillRect(-120, -18, 240, 36); ctx.restore();
     }
-    quietLine(ctx, s.L, t, 70, H - 200);
+    if (s.L.chars.length) quietLine(ctx, s.L, t, 70, H - 200);
     sliceGlitch(ctx, kick * .5, hi, 5);
+  },
+};
+
+// ================= lyric panels: words printed on paper cards that move in (not type laid on the frame)
+const CARD = new Map();
+// a printed card: paper (or ink) ground, the words inked on it, speckled; cached by its look
+function card(text, o = {}) {
+  const key = JSON.stringify([text, o]); if (CARD.has(key)) return CARD.get(key);
+  const size = o.size ?? 140, face = FACES[o.face ?? 'loud'], pad = o.pad ?? size * .28;
+  const m = makeCanvas(10, 10).getContext('2d'); m.font = font(size, face.w, face.fam);
+  const tw = o.vertical ? size * 1.1 : m.measureText(text).width, th = o.vertical ? size * 1.02 * [...text].length : size * 1.15;
+  const c = makeCanvas(Math.ceil(tw + pad * 2), Math.ceil(th + pad * 2)), g = c.getContext('2d');
+  g.fillStyle = o.bg ?? INK.cream; g.fillRect(0, 0, c.width, c.height);
+  if (o.border) { g.strokeStyle = o.border; g.lineWidth = 4; g.strokeRect(10, 10, c.width - 20, c.height - 20); }
+  g.font = font(size, face.w, face.fam); g.fillStyle = o.fg ?? INK.navy; g.textBaseline = 'middle';
+  if (o.shadowInk) { g.fillStyle = o.shadowInk; }
+  const put = (dx, dy) => {
+    if (o.vertical) { g.textAlign = 'center'; [...text].forEach((ch, i) => g.fillText(ch, c.width / 2 + dx, pad + size * (.5 + i * 1.02) + dy)); }
+    else { g.textAlign = 'left'; g.fillText(text, pad + dx, c.height / 2 + size * .06 + dy); }
+  };
+  if (o.shadowInk) { put(size * .05, size * .05); g.fillStyle = o.fg ?? INK.navy; }   // misregistered second ink
+  put(0, 0);
+  g.globalCompositeOperation = 'destination-out'; g.fillStyle = g.createPattern(speckle(), 'repeat'); g.fillRect(0, 0, c.width, c.height);
+  if (o.torn) {       // ragged left/right edges
+    g.beginPath(); for (let y = 0; y <= c.height; y += 8) g.lineTo(hash(y, 3) * 14, y); g.lineTo(0, c.height); g.lineTo(0, 0); g.fill();
+    g.beginPath(); g.moveTo(c.width, 0); for (let y = 0; y <= c.height; y += 8) g.lineTo(c.width - hash(y, 4) * 14, y); g.lineTo(c.width, c.height); g.fill();
+  }
+  CARD.set(key, c); return c;
+}
+const drop = (ctx, f) => { ctx.save(); ctx.shadowColor = 'rgba(29,42,107,.35)'; ctx.shadowOffsetX = 10; ctx.shadowOffsetY = 12; ctx.shadowBlur = 0; f(); ctx.restore(); };
+
+// stands up from lying flat on the floor, hinged on its bottom edge (sliced perspective); falls back on exit
+function standUp(ctx, c, x, yBottom, t, t0, o = {}) {
+  let k = backOut(clamp((t - t0) / (o.dur ?? .32)), 1.6);
+  if (o.out != null) k *= 1 - easeIn(clamp((t - o.out) / .25));
+  if (k <= 0) return;
+  const a = (1 - k) * Math.PI / 2, f = 1600, n = 48, w = c.width * (o.scale ?? 1), h = c.height * (o.scale ?? 1);
+  drop(ctx, () => { for (let j = 0; j < n; j++) {        // slice j from the hinge upward
+    const r0 = j / n, r1 = (j + 1) / n, p = r => { const y3 = -r * h * Math.cos(a), z = r * h * Math.sin(a); const s = f / (f + z); return [s, yBottom + y3 * s]; };
+    const [s0, y0] = p(r0), [s1, y1] = p(r1), sw = w * (s0 + s1) / 2;
+    ctx.drawImage(c, 0, c.height * (1 - r1), c.width, c.height / n + 1, x - sw / 2, y1, sw, Math.max(1, y0 - y1 + .5));
+  } });
+}
+// turns over around its vertical axis (a card flipped face up)
+function flipIn(ctx, c, x, y, t, t0, o = {}) {
+  const k = clamp((t - t0) / (o.dur ?? .28)); if (k <= 0) return;
+  const sx = Math.cos((1 - easeOut(k)) * Math.PI), w = c.width * (o.scale ?? 1), h = c.height * (o.scale ?? 1);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(o.rot ?? 0); ctx.scale(Math.abs(sx), 1);
+  if (sx < 0) { ctx.fillStyle = o.back ?? INK.pink; ctx.fillRect(-w / 2, -h / 2, w, h); }
+  else drop(ctx, () => ctx.drawImage(c, -w / 2, -h / 2, w, h));
+  ctx.restore();
+}
+// stamped: drops from above, big to size, a rough ink ring bleeds out
+function stamp(ctx, c, x, y, t, t0, o = {}) {
+  const k = clamp((t - t0) / .14); if (k <= 0) return;
+  const s = lerp(2.4, 1, easeIn(k)) * (o.scale ?? 1), w = c.width * s, h = c.height * s;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(o.rot ?? -.06); ctx.globalAlpha = k;
+  if (k >= 1) { const b = clamp((t - t0 - .14) / .3); ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = .35 * (1 - b);
+    ctx.fillStyle = o.ink ?? INK.pink; ctx.fillRect(-w / 2 - 20 * b, -h / 2 - 20 * b, w + 40 * b, h + 40 * b); ctx.restore(); }
+  ctx.globalCompositeOperation = o.blend ?? 'multiply'; ctx.drawImage(c, -w / 2, -h / 2, w, h); ctx.restore();
+}
+// a bar of ink sweeps across; the card is left behind it
+function wipe(ctx, c, x, y, t, t0, o = {}) {
+  const dur = o.dur ?? .35, k = clamp((t - t0) / dur); if (k <= 0) return;
+  const w = c.width * (o.scale ?? 1), h = c.height * (o.scale ?? 1), x0 = x - w / 2, y0 = y - h / 2;
+  const lead = easeInOut(k) * (w + 120) - 60, tail = easeInOut(clamp((t - t0 - dur * .45) / dur)) * (w + 120) - 60;
+  ctx.save(); ctx.beginPath(); ctx.rect(x0, y0 - 10, Math.max(0, tail), h + 20); ctx.clip(); drop(ctx, () => ctx.drawImage(c, x0, y0, w, h)); ctx.restore();
+  if (tail < w + 60) { ctx.fillStyle = o.bar ?? INK.red; ctx.fillRect(x0 + Math.max(0, tail), y0 - 10, Math.max(0, lead - Math.max(0, tail)), h + 20); }
+}
+// a torn strip slides in from off-frame and settles at an angle
+function slideIn(ctx, c, x, y, t, t0, o = {}) {
+  const k = clamp((t - t0) / (o.dur ?? .3)); if (k <= 0) return;
+  const from = o.from ?? 1, dx = (1 - backOut(k, 1.3)) * W * .9 * from;
+  ctx.save(); ctx.translate(x + dx, y); ctx.rotate(o.rot ?? -.05); drop(ctx, () => ctx.drawImage(c, -c.width / 2, -c.height / 2)); ctx.restore();
+}
+// start time of chars[a] of a line
+const at = (L, a) => L.chars[Math.min(a, L.chars.length - 1)][1] - .04;
+
+// ---- the panel versions of the chorus sample (style=P)
+const PANEL_SCENES = {
+  12(ctx, t, s) {
+    fillBg(ctx, INK.paper);
+    sunburst(ctx, W * .5, H * .45, t, 'rgba(255,95,162,.5)');
+    dotField(ctx, INK.navy, 26, (x, y) => clamp((y - .6) * 1.4) * .5);
+    const f = rframe('rose', t, s, { at: [320, 420], zoom: 1.0 }, { at: [320, 340], zoom: 1.08 });
+    f(ctx, 'fg', { rect: [W * .27, 0, W * .46, H], pos: [W * .5, H * .36] });
+    const L = s.L;
+    stamp(ctx, card('そう', { size: 90, face: 'hand', bg: INK.pink, fg: INK.navy }), 330, 300, t, at(L, 0), { rot: -.12 });
+    standUp(ctx, card('トゲがない', { size: 230, face: 'loud', bg: INK.cream, fg: INK.pink, shadowInk: INK.navy, border: INK.navy }),
+      W / 2, H - 40, t, at(L, 3), { out: s.t1 - .25 });
+    paperTag(ctx, 60, 60, 330, 130, -.03, g => {
+      tagText(g, 'THORNS', 26, 44, 26, INK.navy); tagText(g, '棘の数', 170, 44, 18, INK.navy, FACES.mono.fam, FACES.mono.w);
+      tagText(g, `${Math.max(0, 8 * (1 - prog(t, s.t0, L.end))).toFixed(1)}%`, 26, 110, 58, INK.red, FACES.loud.fam, FACES.loud.w);
+    });
+  },
+  13(ctx, t, s) {
+    const f = rframe('roof', t, s, { at: [700, 330], zoom: 1.05 }, { at: [470, 300], zoom: 1.22 });
+    f(ctx, 'full');
+    const L = s.L;
+    // 痛々しさが: a red bar wipes across behind her head and leaves the words
+    wipe(ctx, card('痛々しさが', { size: 210, face: 'rose', bg: INK.navy, fg: INK.pink }), W * .3, H * .26, t, at(L, 0), { bar: INK.red, dur: .45 });
+    f(ctx, 'fg');
+    // 愛しいでしょ？: a torn strip slides in from the right, in front of her
+    slideIn(ctx, card('愛しいでしょ？', { size: 170, face: 'rose', bg: INK.pink, fg: INK.navy, torn: true }), W * .64, H * .8, t, at(L, 5), { rot: -.06 });
+    const p = pulse(t, .35); if (p > 0) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.strokeStyle = INK.pink; ctx.lineWidth = 14 * p;
+      ctx.beginPath(); ctx.arc(W * .74, H * .32, 420 * (1 - p) + 60, 0, 7); ctx.stroke(); ctx.restore(); }
+  },
+  14(ctx, t, s) {
+    RISO_SCENES[14](ctx, t, { ...s, L: { ...s.L, chars: [] } });        // the three printed panels, no type
+    const L = s.L;
+    // one card per word, each turned over on its own beat, stepping down the middle panel
+    [['わたしに', 0], ['なれない', 4], ['ヒト', 8]].forEach(([w, a], j) =>
+      flipIn(ctx, card(w, { size: 120, face: 'loud', bg: [INK.cream, INK.pink, INK.navy][j], fg: [INK.navy, INK.navy, INK.cream][j] }),
+        W / 2 + (j - 1) * 60, 250 + j * 250, t, at(L, a), { rot: (j - 1) * .05, back: [INK.pink, INK.navy, INK.red][j] }));
+  },
+  15(ctx, t, s) {
+    RISO_SCENES[15](ctx, t, { ...s, L: { ...s.L, chars: [] } });
+    // quiet line: a small tag that stands up in the corner
+    standUp(ctx, card(s.L.text, { size: 50, face: 'label', bg: INK.cream, fg: INK.navy, border: INK.pink }), 330, H - 70, t, at(s.L, 0), { dur: .28 });
   },
 };

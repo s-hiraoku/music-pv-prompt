@@ -111,4 +111,4 @@ const C = {
   },
 };
 
-if (STYLE) { const S = { A, B, C }[STYLE]; if (S) { SCENES[12] = S[12]; SCENES[13] = S[13]; } }
+if (STYLE) { const S = { A, B, C, R: RISO_SCENES }[STYLE]; if (S) for (const k of Object.keys(S)) SCENES[k] = S[k]; }

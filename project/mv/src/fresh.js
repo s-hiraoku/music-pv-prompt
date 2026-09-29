@@ -205,5 +205,32 @@ sceneOutro = (ctx, t, s) => {
   kin(ctx, 'My rose has no thorns', t, s.t1 - 7.2, { x: W / 2, y: H * .55 + 80, size: 48, face: 'en', fx: 'fade', fill: GREY, dur: 1.2 });
 };
 
+SCENES.__lyric = lyric;
 Object.assign(SCENES, F);
+})();
+
+// ---------- living stills (index.html?cut=fresh&live=1): depth parallax + wind + lights + smoke on 16-18
+(() => {
+const q = new URLSearchParams(location.search); if (q.get('cut') !== 'fresh' || !q.get('live')) return;
+window.loadLiveExtra = loadLive;
+const RED = '#d0142c';
+// 16 まるで群がっている蛾のよう: the rooftop; the camera arcs from the city to her, near and far separating
+SCENES[16] = (ctx, t, s) => {
+  const k = easeInOut(s.k), sw = Math.sin(k * Math.PI - Math.PI / 2);
+  const cam = { at: [lerp(820, 480, k), lerp(330, 300, k)], zoom: lerp(1.12, 1.3, k), shift: [.016 * sw, -.004 * sw], focus: .5 };
+  const view = liveShot(ctx, 'roof', t, cam, { colour: 1, wind: .0022 });
+  twinkle(ctx, 'roof', view, t, cam.shift);
+  SCENES.__lyric(ctx, s.L, t, s, 'bl', { ink: '#f3ece6', under: RED });
+};
+// 17 面白いね / 18 気をつけて: the smoking close-up, breathing slowly, hair in the wind, smoke rising
+const smokeShot = (ctx, t, s, pos) => {
+  const a = DATA.lines[17].start - .2, b = DATA.lines[18].end + .4, k = easeInOut(prog(t, a, b)), sw = Math.sin(k * Math.PI - Math.PI / 2);
+  const cam = { at: [lerp(360, 320, k), lerp(150, 125, k)], zoom: lerp(1.2, 1.36, k) * (1 + .004 * Math.sin(t * 1.4)), shift: [-.012 * sw, .003 * sw], focus: .5 };
+  const view = liveShot(ctx, 'smoke', t, cam, { colour: 1, wind: .003 });
+  twinkle(ctx, 'smoke', view, t, cam.shift);
+  smoke(ctx, view, t, [245 / 764, 66 / 506]);
+  SCENES.__lyric(ctx, s.L, t, s, pos, { ink: '#f3ece6', under: RED });
+};
+SCENES[17] = (ctx, t, s) => smokeShot(ctx, t, s, 'br');
+SCENES[18] = (ctx, t, s) => smokeShot(ctx, t, s, 'bl');
 })();

@@ -48,7 +48,7 @@ window.MV = {
   ready: false,
   frame(t, q = .92) { draw(t); return canvas.toDataURL('image/jpeg', q); },
 };
-Promise.all([window.loadFresh ? loadFresh() : null, loadPhotos(), !STYLE || ['R', 'P', 'O'].includes(STYLE) ? loadRiso() : null, document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
+Promise.all([window.loadFresh ? loadFresh() : null, window.loadLiveExtra ? loadLiveExtra() : null, loadPhotos(), !STYLE || ['R', 'P', 'O'].includes(STYLE) ? loadRiso() : null, document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
   document.fonts.load(font(100, 900, FONT_HERO)), document.fonts.load(font(40, 500, FONT_EN)),
   ...Object.values(FACES).map(f => document.fonts.load(font(100, f.w, f.fam), 'あ漢A0')),
   ...['800 100px "Kaisei Tokumin"', 'italic 700 100px "Bodoni Moda"', '400 100px "Reggae One"', '400 100px "Stick"', '400 100px "Train One"']

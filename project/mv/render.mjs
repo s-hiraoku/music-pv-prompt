@@ -25,7 +25,7 @@ async function openPage() {
   page.on('console', m => { if (m.type() === 'error') console.error('[page]', m.text()); });
   page.on('pageerror', e => console.error('[page error]', e.message));
   await page.setViewport({ width: 1920, height: 1080 });
-  await page.goto('file://' + path.join(here, 'index.html') + (args.style ? `?style=${args.style}` : args.cut ? `?cut=${args.cut}` : ''));
+  await page.goto('file://' + path.join(here, 'index.html') + (args.style ? `?style=${args.style}` : args.cut ? `?cut=${args.cut}${args.live ? '&live=1' : ''}` : ''));
   await page.waitForFunction('window.MV && window.MV.ready === true', { timeout: 60000 });
   return { browser, page };
 }

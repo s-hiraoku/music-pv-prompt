@@ -1,0 +1,4 @@
+project/assets/
+project/comp/node_modules/
+project/comp/out/
+__pycache__/

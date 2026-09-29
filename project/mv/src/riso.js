@@ -1,14 +1,20 @@
 // riso.js: the print look. Stills are risograph prints (design/riso.py: navy + fluoro pink + rose red on cream,
 // halftoned, out of register) with the character cut out as her own layer, so type can sit behind her. Type is
 // never laid on top as a font: it is rasterised, inked (multiply), speckled and misregistered like the pictures.
-const INK = { paper: '#f1e9da', navy: '#1d2a6b', pink: '#ff5fa2', red: '#d61e3a', cream: '#fbf5ea' };
+// LOOK 'orig' keeps the illustrations as they are (style=O) and takes the panel colours from them; 'riso' prints
+// everything (style=R/P)
+const LOOK = new URLSearchParams(location.search).get('style') === 'O' ? 'orig' : 'riso';
+const INK = LOOK === 'orig'
+  ? { paper: '#e9dfe9', navy: '#2a1f4a', pink: '#d94a9a', red: '#a3123a', cream: '#f6ecf1', lilac: '#cbb6f2' }   // sampled from the stills
+  : { paper: '#f1e9da', navy: '#1d2a6b', pink: '#ff5fa2', red: '#d61e3a', cream: '#fbf5ea', lilac: '#c9a8ff' };
+const PATTERN_BLEND = LOOK === 'orig' ? 'soft-light' : 'multiply';
 const RISO = {};                               // id -> { full, fg, s } (s: riso px per source-crop px)
 const RISO_IDS = ['room', 'rose', 'lying', 'sit', 'roof', 'sunset', 'near', 'lookup', 'smoke'];
 
 function loadRiso() {
   const load = src => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
   return Promise.all(RISO_IDS.map(async id => {
-    const [full, fg] = await Promise.all([load(`../design/riso/${id}_full.jpg`), load(`../design/riso/${id}_fg.png`)]);
+    const [full, fg] = await Promise.all([load(`../design/${LOOK === 'orig' ? 'cut' : 'riso'}/${id}_full.jpg`), load(`../design/${LOOK === 'orig' ? 'cut' : 'riso'}/${id}_fg.png`)]);
     RISO[id] = { full, fg, s: full.width / PHOTOS[id].crop[2] };
   }));
 }
@@ -88,13 +94,13 @@ function quietLine(ctx, L, t, x, y, rot = -.02) {
 
 // sunburst rays in an ink, rotating slowly, printed (multiply) on paper
 function sunburst(ctx, cx, cy, t, ink, n = 18, spin = .05) {
-  ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = ink; ctx.translate(cx, cy); ctx.rotate(t * spin);
+  ctx.save(); ctx.globalCompositeOperation = PATTERN_BLEND; ctx.fillStyle = ink; ctx.translate(cx, cy); ctx.rotate(t * spin);
   for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; ctx.beginPath(); ctx.moveTo(0, 0);
     ctx.arc(0, 0, 2600, a, a + Math.PI / n); ctx.closePath(); ctx.fill(); }
   ctx.restore();
 }
 // a halftone dot field (fade across the frame), printed in an ink
-function dotField(ctx, ink, step, fn) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; halftone(ctx, ink, step, step * .55, fn); ctx.restore(); }
+function dotField(ctx, ink, step, fn) { ctx.save(); ctx.globalCompositeOperation = PATTERN_BLEND; halftone(ctx, ink, step, step * .55, fn); ctx.restore(); }
 // paper grain + a hair of misregistration on the whole print
 function printFinish(ctx, t) {
   grain(ctx, t, .12);
@@ -143,8 +149,8 @@ const RISO_SCENES = {
   },
   // 14 わたしになれないヒト — impact. Three of her: the print in the middle, flat single-ink copies either side
   14(ctx, t, s) {
-    fillBg(ctx, INK.paper);
-    dotField(ctx, INK.pink, 22, (x, y) => .25 + .35 * Math.sin(x * 6 + t));
+    fillBg(ctx, LOOK === 'orig' ? INK.navy : INK.paper);
+    dotField(ctx, LOOK === 'orig' ? INK.lilac : INK.pink, 22, (x, y) => .25 + .35 * Math.sin(x * 6 + t));
     const n = clamp(hitIdx(t) - hitIdx(s.t0) + 1, 1, 3), sw = W / 3;
     const panel = (col, ink) => {
       const rect = [col * sw + 10, 40, sw - 20, H - 80], age = t - (DATA.hits[hitIdx(s.t0) + [1, 0, 2].indexOf(col)] ?? s.t0);
@@ -200,7 +206,7 @@ function card(text, o = {}) {
   }
   CARD.set(key, c); return c;
 }
-const drop = (ctx, f) => { ctx.save(); ctx.shadowColor = 'rgba(29,42,107,.35)'; ctx.shadowOffsetX = 10; ctx.shadowOffsetY = 12; ctx.shadowBlur = 0; f(); ctx.restore(); };
+const drop = (ctx, f) => { ctx.save(); ctx.shadowColor = LOOK === 'orig' ? 'rgba(20,10,30,.55)' : 'rgba(29,42,107,.35)'; ctx.shadowOffsetX = 10; ctx.shadowOffsetY = 12; ctx.shadowBlur = 0; f(); ctx.restore(); };
 
 // stands up from lying flat on the floor, hinged on its bottom edge (sliced perspective); falls back on exit
 function standUp(ctx, c, x, yBottom, t, t0, o = {}) {
@@ -237,7 +243,8 @@ function wipe(ctx, c, x, y, t, t0, o = {}) {
   const dur = o.dur ?? .35, k = clamp((t - t0) / dur); if (k <= 0) return;
   const w = c.width * (o.scale ?? 1), h = c.height * (o.scale ?? 1), x0 = x - w / 2, y0 = y - h / 2;
   const lead = easeInOut(k) * (w + 120) - 60, tail = easeInOut(clamp((t - t0 - dur * .45) / dur)) * (w + 120) - 60;
-  ctx.save(); ctx.beginPath(); ctx.rect(x0, y0 - 10, Math.max(0, tail), h + 20); ctx.clip(); drop(ctx, () => ctx.drawImage(c, x0, y0, w, h)); ctx.restore();
+  ctx.save(); ctx.beginPath(); ctx.rect(x0, y0 - 10, Math.max(0, tail), h + 20); ctx.clip(); if (o.blur) ctx.filter = `blur(${o.blur}px)`;
+  drop(ctx, () => ctx.drawImage(c, x0, y0, w, h)); ctx.restore();
   if (tail < w + 60) { ctx.fillStyle = o.bar ?? INK.red; ctx.fillRect(x0 + Math.max(0, tail), y0 - 10, Math.max(0, lead - Math.max(0, tail)), h + 20); }
 }
 // a torn strip slides in from off-frame and settles at an angle
@@ -252,11 +259,12 @@ const at = (L, a) => L.chars[Math.min(a, L.chars.length - 1)][1] - .04;
 // ---- the panel versions of the chorus sample (style=P)
 const PANEL_SCENES = {
   12(ctx, t, s) {
-    fillBg(ctx, INK.paper);
-    sunburst(ctx, W * .5, H * .45, t, 'rgba(255,95,162,.5)');
-    dotField(ctx, INK.navy, 26, (x, y) => clamp((y - .6) * 1.4) * .5);
+    if (LOOK === 'orig') { ctx.filter = 'blur(14px) brightness(.55) saturate(.9)'; rshot(ctx, 'rose', [320, 360], 1.6); ctx.filter = 'none'; }
+    else fillBg(ctx, INK.paper);
+    sunburst(ctx, W * .5, H * .45, t, LOOK === 'orig' ? 'rgba(217,74,154,.55)' : 'rgba(255,95,162,.5)');
+    dotField(ctx, LOOK === 'orig' ? INK.lilac : INK.navy, 26, (x, y) => clamp((y - .6) * 1.4) * .5);
     const f = rframe('rose', t, s, { at: [320, 420], zoom: 1.0 }, { at: [320, 340], zoom: 1.08 });
-    f(ctx, 'fg', { rect: [W * .27, 0, W * .46, H], pos: [W * .5, H * .36] });
+    f(ctx, LOOK === 'orig' ? 'full' : 'fg', { rect: [W * .27, 0, W * .46, H], pos: [W * .5, H * .36] });
     const L = s.L;
     stamp(ctx, card('そう', { size: 90, face: 'hand', bg: INK.pink, fg: INK.navy }), 330, 300, t, at(L, 0), { rot: -.12 });
     standUp(ctx, card('トゲがない', { size: 230, face: 'loud', bg: INK.cream, fg: INK.pink, shadowInk: INK.navy, border: INK.navy }),
@@ -271,7 +279,7 @@ const PANEL_SCENES = {
     f(ctx, 'full');
     const L = s.L;
     // 痛々しさが: a red bar wipes across behind her head and leaves the words
-    wipe(ctx, card('痛々しさが', { size: 210, face: 'rose', bg: INK.navy, fg: INK.pink }), W * .3, H * .26, t, at(L, 0), { bar: INK.red, dur: .45 });
+    wipe(ctx, card('痛々しさが', { size: 210, face: 'rose', bg: INK.navy, fg: INK.pink }), W * .3, H * .26, t, at(L, 0), { bar: INK.red, dur: .45, blur: LOOK === 'orig' ? 1.4 : 0 });
     f(ctx, 'fg');
     // 愛しいでしょ？: a torn strip slides in from the right, in front of her
     slideIn(ctx, card('愛しいでしょ？', { size: 170, face: 'rose', bg: INK.pink, fg: INK.navy, torn: true }), W * .64, H * .8, t, at(L, 5), { rot: -.06 });

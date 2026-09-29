@@ -47,6 +47,7 @@ window.MV = {
   frame(t, q = .92) { draw(t); return canvas.toDataURL('image/jpeg', q); },
 };
 Promise.all([loadPhotos(), document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
-  document.fonts.load(font(100, 900, FONT_HERO)), document.fonts.load(font(40, 500, FONT_EN))])
+  document.fonts.load(font(100, 900, FONT_HERO)), document.fonts.load(font(40, 500, FONT_EN)),
+  ...Object.values(FACES).map(f => document.fonts.load(font(100, f.w, f.fam), 'あ漢A0'))])
   .then(() => { MV.ready = true; if (location.hash) draw(+location.hash.slice(1)); })
   .catch(e => console.error('load failed', e));

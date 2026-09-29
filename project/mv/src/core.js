@@ -10,6 +10,28 @@ const IRIS = ['#a99bd6', '#9fc9d4', '#d9b3c6', '#b8aee0'];
 const FONT = '"Shippori Mincho B1", "Noto Serif CJK JP", serif';
 const FONT_HERO = '"Zen Old Mincho", "Shippori Mincho B1", serif';
 const FONT_EN = '"Cormorant Garamond", "Shippori Mincho B1", serif';
+// type chosen per expression: each family with the one weight it ships in (no synthetic bold)
+const FACES = {
+  base:    { fam: FONT, w: 800 },                                              // narration: Shippori Mincho B1
+  hero:    { fam: FONT_HERO, w: 900 },                                         // title: Zen Old Mincho Black
+  loud:    { fam: '"Dela Gothic One", sans-serif', w: 400 },                   // strong, noisy, violent
+  rose:    { fam: '"Kaisei Decol", serif', w: 700 },                           // the rose: sweet and sore
+  fragile: { fam: '"Hina Mincho", serif', w: 400 },                            // fragile, ennui, fading
+  brush:   { fam: '"Yuji Syuku", serif', w: 400 },                             // burn: ink and heat
+  marker:  { fam: '"Yusei Magic", sans-serif', w: 400 },                       // scrawl, paint-over
+  hand:    { fam: '"Klee One", serif', w: 600 },                               // whisper, a question, a plea
+  pixel:   { fam: '"DotGothic16", monospace', w: 400 },                        // glitch, digital, time
+  label:   { fam: '"Zen Kaku Gothic New", sans-serif', w: 900 },               // warnings, tape, tiles
+  mono:    { fam: '"DM Mono", monospace', w: 500 },                            // small technical labels
+};
+// which face each lyric line is set in
+const LINE_FACE = {
+  0: 'loud', 1: 'label', 2: 'marker', 3: 'base', 4: 'loud', 5: 'label', 6: 'brush', 7: 'hand', 8: 'hand', 9: 'pixel',
+  10: 'base', 11: 'pixel', 12: 'rose', 13: 'rose', 14: 'base', 15: 'loud', 16: 'base', 17: 'fragile', 18: 'label',
+  19: 'brush', 20: 'fragile', 21: 'base', 22: 'fragile', 23: 'fragile', 24: 'loud', 25: 'base', 26: 'rose', 27: 'loud',
+  28: 'base', 29: 'base', 30: 'hand', 31: 'rose', 32: 'fragile', 33: 'fragile',
+};
+const faceOf = L => FACES[LINE_FACE[Math.floor(L.i)]] ?? FACES.base;
 
 // ---- math & easing
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -59,8 +81,8 @@ function fitSize(ctx, text, maxW, maxSize, weight = 800, fam = FONT) {
 //   opts: x, y (baseline centre or left), size, align ('center'|'left'|'right'), color, stroke, strokeW, lead (s before
 //   the sung time), pop (s), tilt (deg), vertical, spacing, shadow {dx, dy, color}, hide (fn char index -> bool)
 function popLine(ctx, L, t, o) {
-  const size = o.size, chars = L.chars, sp = o.spacing ?? 0;
-  ctx.font = font(size, o.weight ?? 800, o.fam ?? FONT);
+  const size = o.size, chars = L.chars, sp = o.spacing ?? 0, face = o.fam ? { fam: o.fam, w: o.weight ?? 800 } : faceOf(L);
+  ctx.font = font(size, face.w, face.fam);
   const widths = chars.map(([c]) => c === ' ' || c === '　' ? size * .35 : ctx.measureText(c).width + sp * size);
   const total = widths.reduce((a, b) => a + b, 0);
   const boxes = [];
@@ -89,7 +111,7 @@ function popLine(ctx, L, t, o) {
 
 // label chip: small English/number type in a filled box (graphic-design garnish)
 function chip(ctx, text, x, y, size, bg, fg, align = 'left') {
-  ctx.font = font(size * 1.25, 600, FONT_EN);
+  ctx.font = font(size, FACES.mono.w, FACES.mono.fam);
   const w = ctx.measureText(text).width + size * .8, h = size * 1.35;
   const x0 = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
   ctx.fillStyle = bg; ctx.fillRect(x0, y - h * .78, w, h);
@@ -102,7 +124,7 @@ function ticker(ctx, text, y, size, speed, t, fg, bg, angle = 0, h) {
   ctx.save(); ctx.translate(W / 2, y); ctx.rotate(angle);
   const bh = h ?? size * 1.6;
   if (bg) { ctx.fillStyle = bg; ctx.fillRect(-W * 1.5, -bh / 2, W * 3, bh); }
-  ctx.font = font(size, 800); ctx.fillStyle = fg; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.font = font(size, FACES.label.w, FACES.label.fam); ctx.fillStyle = fg; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
   const unit = ctx.measureText(text).width;
   let x = -W * 1.5 - ((t * speed) % unit + unit) % unit;
   while (x < W * 1.5) { ctx.fillText(text, x, size * .04); x += unit; }

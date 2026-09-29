@@ -51,7 +51,7 @@ function tiles(ctx, L, t, x, y, size, bg = PAL.ink, fg = PAL.paper) {
       const s = lerp(.6, 1, backOut(clamp(k)));
       ctx.save(); ctx.translate(cx + size / 2, y); ctx.scale(s, s);
       ctx.fillStyle = bg; ctx.fillRect(-size / 2, -size / 2, size, size);
-      ctx.fillStyle = fg; ctx.font = font(size * .72); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = fg; ctx.font = font(size * .72, FACES.label.w, FACES.label.fam); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(c, 0, size * .03); ctx.restore();
     }
     cx += size * 1.06;
@@ -81,7 +81,7 @@ function heat(ctx, t, s, id, big) {
   push(ctx, id, 'face', t, s, big ? 1.35 : 1.15, big ? 1.6 : 1.3, { sat: .6, ghost: 6 });
   ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(200,71,95,.55)'; ctx.fillRect(0, 0, W, H); ctx.restore();
   flames(ctx, t, 'rgba(125,36,54,.85)', 'rgba(200,71,95,.8)', big ? 460 : 320);
-  popLine(ctx, s.L, t, { x: W / 2, y: H * .5, fam: FONT_HERO, weight: 900, size: big ? 200 : 160, color: PAL.paper, tilt: 3, from: 1.7,
+  popLine(ctx, s.L, t, { x: W / 2, y: H * .5, size: big ? 200 : 160, color: PAL.paper, tilt: 3, from: 1.7,
     jy: i => Math.sin(t * 9 + i * 1.3) * (big ? 14 : 8), shadow: { dx: 0, dy: 10, color: PAL.roseDeep } });
   if (big) sliceGlitch(ctx, pulse(t, .15), hitIdx(t), 8);
 }
@@ -141,7 +141,7 @@ function titleCard(ctx, t, t0, t1) {
 // 0 強いコントラスト: colour against its negative, split on a diagonal that jumps on the hits
 SCENES[0] = (ctx, t, s) => {
   const size = fitSize(ctx, s.L.text, W * .8, 250), at = [lerp(430, 480, s.k), 300], z = 1.3 * (1 + .05 * pulse(t, .18));
-  const type = col => popLine(ctx, s.L, t, { x: W / 2, y: H * .64, fam: FONT_HERO, weight: 900, size, color: col, flash: false, from: 1.45, pop: .09, tilt: 0 });
+  const type = col => popLine(ctx, s.L, t, { x: W / 2, y: H * .64, size, color: col, flash: false, from: 1.45, pop: .09, tilt: 0 });
   const jumps = diagonal(ctx, t, s, () => { shot(ctx, 'roof', at, z, { sat: .8 }); dim(ctx, .25); type(PAL.paper); },
     () => { negative(ctx, 'roof', at, z); type(PAL.ink); });
   chip(ctx, 'STRONG CONTRAST', 80, 120, 20, PAL.lav, PAL.ink);
@@ -165,7 +165,7 @@ SCENES[2] = (ctx, t, s) => {
   const h0 = hitIdx(s.t0), n = Math.max(0, hitIdx(t) - h0 + 1);
   for (let i = 0; i < Math.min(n, 9); i++)
     scribble(ctx, 40 + i, clamp((t - (DATA.hits[h0 + i] ?? s.t0)) / .25), i % 3 ? PAL.ink : PAL.roseDeep, hr(300, W - 300, i, 1), hr(250, H - 250, i, 2), hr(160, 320, i, 3));
-  const paint = easeInOut(prog(t, s.L.chars[4][1], s.L.chars[9][1]));
+  const paint = easeInOut(prog(t, s.L.chars[5][1], s.L.end));   // the roller finishes as the line does
   if (paint > 0) {
     ctx.fillStyle = PAL.white; ctx.beginPath(); ctx.moveTo(0, 0);
     const x = paint * (W + 200);
@@ -192,7 +192,7 @@ SCENES[4] = (ctx, t, s) => {
   const n = Math.max(0, hitIdx(t) - hitIdx(s.t0) + 1) * 3;
   for (let i = 0; i < Math.min(n, 40); i++) {
     ctx.save(); ctx.translate(hr(0, W, i, 1), hr(0, H, i, 2)); ctx.rotate(hr(-.4, .4, i, 3));
-    ctx.font = font(hr(24, 60, i, 4), 700); ctx.fillStyle = `rgba(232,229,224,${hr(.2, .5, i, 5)})`; ctx.fillText(s.L.text, 0, 0); ctx.restore();
+    ctx.font = font(hr(24, 60, i, 4), FACES.loud.w, FACES.loud.fam); ctx.fillStyle = `rgba(232,229,224,${hr(.2, .5, i, 5)})`; ctx.fillText(s.L.text, 0, 0); ctx.restore();
   }
   const shake = pulse(t, .12) * 10;
   popLine(ctx, s.L, t, { x: W / 2 + hr(-1, 1, t) * shake, y: H * .55, size: 140, color: PAL.paper, stroke: PAL.ink, strokeW: 18, tilt: 5 });
@@ -261,14 +261,14 @@ SCENES[11] = (ctx, t, s) => {
   fillBg(ctx, PAL.ink);
   shot(ctx, 'sit', PHOTOS.sit.neon, 1.6, { blur: 12, bright: .4 });
   const end = s.L.end - .25, left = Math.max(0, end - t);
-  ctx.fillStyle = left > 0 ? PAL.lav : PAL.rose; ctx.font = font(260, 800, FONT_EN); ctx.textAlign = 'center';
+  ctx.fillStyle = left > 0 ? PAL.lav : PAL.rose; ctx.font = font(240, FACES.pixel.w, FACES.pixel.fam); ctx.textAlign = 'center';
   ctx.fillText(`00:0${Math.floor(left)}.${String(Math.floor((left % 1) * 100)).padStart(2, '0')}`, W / 2, H * .52);
   popLine(ctx, s.L, t, { x: W / 2, y: H * .25, size: 86, color: PAL.paper, tilt: 0 });
   if (left <= 0) {
     const k = backOut(clamp((t - end) / .15));
     ctx.save(); ctx.translate(W / 2, H * .75); ctx.rotate(-.12); ctx.scale(k, k);
     ctx.strokeStyle = PAL.rose; ctx.lineWidth = 8; ctx.strokeRect(-330, -80, 660, 140);
-    ctx.fillStyle = PAL.rose; ctx.font = font(100, 900, FONT_EN); ctx.fillText('TIME OVER', 0, 30); ctx.restore();
+    ctx.fillStyle = PAL.rose; ctx.font = font(96, FACES.pixel.w, FACES.pixel.fam); ctx.fillText('TIME OVER', 0, 30); ctx.restore();
   }
 };
 
@@ -282,8 +282,8 @@ SCENES[12] = (ctx, t, s) => {
   shot(ctx, 'rose', [lerp(300, 330, k), lerp(470, 330, k)], lerp(1.35, 1.12, k) * (1 + .04 * kick), { rect, blur: lerp(3, .6, k), ghost: 3 + 6 * kick });
   ctx.strokeStyle = 'rgba(232,229,224,.5)'; ctx.lineWidth = 2; ctx.strokeRect(rect[0] - 14, rect[1] - 14, rect[2] + 28, rect[3] + 28);
   const L = s.L, first = { ...L, chars: L.chars.slice(0, 2) }, rest = { ...L, i: L.i + .5, chars: L.chars.slice(3) };
-  popLine(ctx, first, t, { x: W * .34, y: 250, size: 54, weight: 300, color: PAL.fog, vertical: true, align: 'top', tilt: 0, from: 1.2, flash: false });
-  popLine(ctx, rest, t, { x: W * .24, y: 190, fam: FONT_HERO, weight: 900, size: 150, color: PAL.paper, vertical: true, align: 'top', tilt: 2, from: 1.6, shadow: { dx: 6, dy: 6, color: PAL.roseDeep } });
+  popLine(ctx, first, t, { x: W * .34, y: 250, size: 54, color: PAL.fog, vertical: true, align: 'top', tilt: 0, from: 1.2, flash: false });
+  popLine(ctx, rest, t, { x: W * .24, y: 190, size: 150, color: PAL.paper, vertical: true, align: 'top', tilt: 2, from: 1.6, shadow: { dx: 6, dy: 6, color: PAL.roseDeep } });
   chip(ctx, 'NO THORNS', rect[0] - 14, rect[1] - 34, 18, PAL.rose, PAL.paper);
 };
 
@@ -326,7 +326,7 @@ SCENES[16] = (ctx, t, s) => {
 // 17 面白いね: a quiet close-up, thin type
 SCENES[17] = (ctx, t, s) => {
   push(ctx, 'near', 'face', t, s, 1.25, 1.4, { blur: 1.5, ghost: 5, sat: .85 });
-  popLine(ctx, s.L, t, { x: W - 160, y: H * .84, size: 64, weight: 300, align: 'right', color: PAL.paper, tilt: 0, from: 1.1, flash: false });
+  popLine(ctx, s.L, t, { x: W - 160, y: H * .84, size: 64, align: 'right', color: PAL.paper, tilt: 0, from: 1.1, flash: false });
   caption(ctx, 'FUNNY, ISN\'T IT', W - 160, H * .84 + 40, 1, 'right');
 };
 
@@ -351,7 +351,7 @@ SCENES[20] = (ctx, t, s) => {
     ctx.fillStyle = PAL.paper; ctx.fillRect(rect[0] - 10, rect[1] - 10, w + 20, h + 20);
     shot(ctx, 'room', PHOTOS.room.face, 1.1, { rect, sat: .5 + .1 * d, bright: 1 - .06 * d });
   }
-  popLine(ctx, s.L, t, { x: W / 2, y: H - 90, size: 76, weight: 500, color: PAL.ink, flash: false, tilt: 0, stroke: PAL.paper, strokeW: 14 });
+  popLine(ctx, s.L, t, { x: W / 2, y: H - 90, size: 76, color: PAL.ink, flash: false, tilt: 0, stroke: PAL.paper, strokeW: 14 });
 };
 
 // 21 加速するユートピア: the city rushing, speed lines accelerating
@@ -366,7 +366,7 @@ SCENES[21] = (ctx, t, s) => {
 SCENES[22] = (ctx, t, s) => {
   push(ctx, 'sunset', 'sun', t, s, 2.4, 1.0, { sat: .8, blur: 1 });
   dim(ctx, .2);
-  popLine(ctx, s.L, t, { x: W * .3, y: H * .3, size: lerp(96, 44, easeInOut(s.k)), weight: 500, color: PAL.paper, tilt: 0, flash: false, from: 1.2 });
+  popLine(ctx, s.L, t, { x: W * .3, y: H * .3, size: lerp(96, 44, easeInOut(s.k)), color: PAL.paper, tilt: 0, flash: false, from: 1.2 });
   caption(ctx, 'EDEN, FAR AWAY', W * .3, H * .3 + 40, 1 - s.k, 'center');
 };
 
@@ -377,7 +377,7 @@ SCENES[23] = (ctx, t, s) => {
     const a = .5 + .5 * Math.sin(t * 4 + i * 2), x = hr(0, W, i, 1), y = hr(0, H, i, 2), r = hr(3, 9, i, 3) * a;
     ctx.fillStyle = `rgba(244,242,238,${.7 * a})`; ctx.beginPath(); ctx.moveTo(x, y - r * 3); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r * 3); ctx.lineTo(x - r, y); ctx.fill();
   }
-  popLine(ctx, s.L, t, { x: W - 170, y: H * .5, size: 80, weight: 500, color: PAL.paper, vertical: true, tilt: 0, flash: false });
+  popLine(ctx, s.L, t, { x: W - 170, y: H * .5, size: 80, color: PAL.paper, vertical: true, tilt: 0, flash: false });
 };
 
 // 24 弱さも強さも愛せないのなら: the contrast split again (callback to line 0)
@@ -412,7 +412,7 @@ SCENES[26] = (ctx, t, s) => {
 SCENES[27] = (ctx, t, s) => {
   push(ctx, 'roof', 'face', t, s, 1.7, 1.9, { sat: .8, ghost: 4 });
   dim(ctx, .2);
-  popLine(ctx, s.L, t, { x: W / 2, y: H * .74, fam: FONT_HERO, weight: 900, size: 330, color: PAL.paper, stroke: PAL.ink, strokeW: 20, tilt: 3, from: 1.9 });
+  popLine(ctx, s.L, t, { x: W / 2, y: H * .74, size: 330, color: PAL.paper, stroke: PAL.ink, strokeW: 20, tilt: 3, from: 1.9 });
 };
 
 // 28 わたしになれなくても: five strips this time
@@ -457,14 +457,14 @@ SCENES[31] = (ctx, t, s) => {
 // 32 見納めて: the smoking close-up, pulling out slowly, colour draining
 SCENES[32] = (ctx, t, s) => {
   push(ctx, 'smoke', 'face', t, s, 1.5, 1.05, { sat: lerp(.8, .3, s.k), kick: 0 });
-  popLine(ctx, s.L, t, { x: W - 180, y: 170, size: 90, weight: 500, color: PAL.paper, vertical: true, align: 'top', tilt: 0, flash: false });
+  popLine(ctx, s.L, t, { x: W - 180, y: 170, size: 90, color: PAL.paper, vertical: true, align: 'top', tilt: 0, flash: false });
 };
 
 // 33 枯れゆくまで: the rose greys, petals fall
 SCENES[33] = (ctx, t, s) => {
   push(ctx, 'rose', 'rose', t, s, 1.6, 1.8, { mono: s.k, bright: lerp(.9, .6, s.k), kick: 0 });
   petals(ctx, t, s.t0, 40, `rgba(200,71,95,${lerp(.8, .3, s.k)})`);
-  popLine(ctx, s.L, t, { x: W / 2, y: H * .55, size: 110, weight: 500, color: PAL.paper, tilt: 0, flash: false, pop: .3, from: 1.1 });
+  popLine(ctx, s.L, t, { x: W / 2, y: H * .55, size: 110, color: PAL.paper, tilt: 0, flash: false, pop: .3, from: 1.1 });
 };
 
 // outro: slow crossfades through the stills, draining; the title returns; main.js fades to black
@@ -477,7 +477,7 @@ function sceneOutro(ctx, t, s) {
   if (k > .75 && j + 1 < seq.length) draw(seq[j + 1], 0, (k - .75) / .25);
   petals(ctx, t, s.t0 - 3, 24, 'rgba(200,71,95,.35)');
   withAlpha(ctx, prog(t, s.t1 - 7, s.t1 - 5), () => {
-    ctx.fillStyle = PAL.paper; ctx.font = font(72, 500); ctx.textAlign = 'center'; ctx.fillText('私の薔薇には棘がない', W / 2, H / 2);
+    ctx.fillStyle = PAL.paper; ctx.font = font(84, 900, FONT_HERO); ctx.textAlign = 'center'; ctx.fillText('私の薔薇には棘がない', W / 2, H / 2);
     caption(ctx, 'Flehmann × OTO MAYUMI', W / 2, H / 2 + 60, 1, 'center');
   });
 }

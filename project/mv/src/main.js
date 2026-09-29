@@ -33,10 +33,10 @@ function draw(t) {
   ctx.restore();
   // every frame is a film still: soft bloom and letterbox
   if (STYLE === 'R' || STYLE === 'P') printFinish(ctx, t);
-  else if (STYLE === 'O') { bloom(ctx, .24); grain(ctx, t, .08); }      // one light and grain over stills and panels alike
+  else if (!STYLE || STYLE === 'O') { bloom(ctx, .24); grain(ctx, t, .08); }   // one light and grain over stills and panels alike
   else { bloom(ctx, .28); letterbox(ctx, 64); }
   // finish: grain, vignette, fade in/out
-  if (STYLE !== 'R' && STYLE !== 'P') grain(ctx, t, .09);
+  if (STYLE && !['R', 'P', 'O'].includes(STYLE)) grain(ctx, t, .09);
   const v = ctx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(10,8,14,.45)');
   ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
@@ -48,7 +48,7 @@ window.MV = {
   ready: false,
   frame(t, q = .92) { draw(t); return canvas.toDataURL('image/jpeg', q); },
 };
-Promise.all([loadPhotos(), ['R', 'P', 'O'].includes(STYLE) ? loadRiso() : null, document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
+Promise.all([loadPhotos(), !STYLE || ['R', 'P', 'O'].includes(STYLE) ? loadRiso() : null, document.fonts.load(font(100, 800)), document.fonts.load(font(100, 500)),
   document.fonts.load(font(100, 900, FONT_HERO)), document.fonts.load(font(40, 500, FONT_EN)),
   ...Object.values(FACES).map(f => document.fonts.load(font(100, f.w, f.fam), 'あ漢A0')),
   ...['800 100px "Kaisei Tokumin"', 'italic 700 100px "Bodoni Moda"', '400 100px "Reggae One"', '400 100px "Stick"', '400 100px "Train One"']

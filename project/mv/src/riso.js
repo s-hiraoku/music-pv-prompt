@@ -3,26 +3,28 @@
 // never laid on top as a font: it is rasterised, inked (multiply), speckled and misregistered like the pictures.
 // LOOK 'orig' keeps the illustrations as they are (style=O) and takes the panel colours from them; 'riso' prints
 // everything (style=R/P)
-const LOOK = new URLSearchParams(location.search).get('style') === 'O' ? 'orig' : 'riso';
+const LOOK = ['R', 'P'].includes(new URLSearchParams(location.search).get('style')) ? 'riso' : 'orig';
 const INK = LOOK === 'orig'
   ? { paper: '#e9dfe9', navy: '#2a1f4a', pink: '#d94a9a', red: '#a3123a', cream: '#f6ecf1', lilac: '#cbb6f2' }   // sampled from the stills
   : { paper: '#f1e9da', navy: '#1d2a6b', pink: '#ff5fa2', red: '#d61e3a', cream: '#fbf5ea', lilac: '#c9a8ff' };
 const PATTERN_BLEND = LOOK === 'orig' ? 'soft-light' : 'multiply';
-const RISO = {};                               // id -> { full, fg, s } (s: riso px per source-crop px)
+const RISO = {};                               // id -> { full, fg, s } in the base look (s: px per source-crop px)
+const PRINT = {};                              // id -> { full, fg, s } the riso print, for accents
 const RISO_IDS = ['room', 'rose', 'lying', 'sit', 'roof', 'sunset', 'near', 'lookup', 'smoke'];
 
 function loadRiso() {
   const load = src => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
-  return Promise.all(RISO_IDS.map(async id => {
-    const [full, fg] = await Promise.all([load(`../design/${LOOK === 'orig' ? 'cut' : 'riso'}/${id}_full.jpg`), load(`../design/${LOOK === 'orig' ? 'cut' : 'riso'}/${id}_fg.png`)]);
-    RISO[id] = { full, fg, s: full.width / PHOTOS[id].crop[2] };
-  }));
+  const set = async (dir, into, id) => {
+    const [full, fg] = await Promise.all([load(`../design/${dir}/${id}_full.jpg`), load(`../design/${dir}/${id}_fg.png`)]);
+    into[id] = { full, fg, s: full.width / PHOTOS[id].crop[2] };
+  };
+  return Promise.all(RISO_IDS.flatMap(id => [set(LOOK === 'orig' ? 'cut' : 'riso', RISO, id), set('riso', PRINT, id)]));
 }
 
 // Like shot() but on the riso print; `layer` 'full' (whole print) or 'fg' (character only). `at` is in the same
 // source-crop coordinates as PHOTOS, so all the points of interest still apply.
 function rshot(ctx, id, at, zoom, o = {}) {
-  const R = RISO[id]; if (!R) return;
+  const R = (o.print ? PRINT : RISO)[id]; if (!R) return;
   const im = o.layer === 'fg' ? R.fg : R.full, [rx, ry, rw, rh] = o.rect ?? [0, 0, W, H];
   const s = Math.max(rw / im.width, rh / im.height) * zoom;
   const pos = o.pos ?? [rx + rw / 2, ry + rh / 2];

@@ -215,7 +215,7 @@ F[21] = (ctx, t, s) => {
   rshot(ctx, 'roof', PHOTOS.roof.city, lerp(1.2, 2.2, easeIn(s.k)), {});
   speedLines(ctx, t, W / 2, H / 2, lerp(.5, 3, easeIn(s.k)), 'rgba(246,236,241,.55)');
   kin(ctx, '加速する', t, at(s.L, 0), { x: W * .06, y: H * .42, size: 230, align: 'left', face: 'loud', fx: 'slide', from: -1, fill: C.lilac, under: C.navy, reg: [14, 0], dur: .2 });
-  kin(ctx, 'ユートピア', t, at(s.L, 4), { x: W * .94, y: H * .82, size: 270, align: 'right', face: 'loud', fx: 'slide', from: 1, fill: C.pink, under: C.cream, reg: [-14, 0], dur: .2 });
+  kin(ctx, 'ユートピア', t, at(s.L, 4), { x: W * .94, y: H * .82, size: 290, align: 'right', face: 'loud', fx: 'slide', from: 1, photo: { id: 'sunset', at: [85, 148], zoom: 1.2 }, outline: C.cream, outlineW: 6, hollow: true, dur: .2 });
 };
 // 22 楽園（エデン）は遥か遠く (small): pulling back from the setting sun
 F[22] = (ctx, t, s) => { base(ctx, 'sunset', t, s, { at: [85, 148], zoom: 2.3 }, { at: [85, 148], zoom: 1.0 }, { kick: 0 });
@@ -250,11 +250,14 @@ F[26] = (ctx, t, s) => {
   kin(ctx, '薔薇に相応しい', t, at(s.L, 5), { x: W * .95, y: H * .9, size: 220, align: 'right', face: 'rose', fx: 'rise', fill: C.pink, under: C.navy, reg: [7, 6] });
   withAlpha(ctx, .9, () => rose(ctx, W * .82, H * .28, 120, t, { bloom: easeOut(clamp(s.k * 1.3)), colour: C.red, line: C.cream }));
 };
-// 27 生き様さ (big): rooftop print, the three characters fill the frame behind her
+// 27 生き様さ (big): rooftop print; hollow echoes behind her, the three characters stamped in front
 F[27] = (ctx, t, s) => {
   const f = base(ctx, 'roof', t, s, { at: [470, 290], zoom: 1.6 }, { at: [470, 290], zoom: 1.8 }, { print: true });
-  kin(ctx, '生き様さ', t, at(s.L, 0), { x: W / 2, y: H * .8, size: 430, face: 'loud', fx: 'slam', fill: C.red, under: C.cream, reg: [12, 9], dur: .2 });
+  for (let e = 1; e <= 3; e++)                                   // hollow echoes stepping up behind the stamp
+    kin(ctx, '生き様さ', t, at(s.L, 0) + e * .08, { x: W / 2, y: H * .8 - e * 150, size: 430, face: 'loud', fx: 'slam', dur: .2, fill: null,
+      outline: `rgba(246,236,241,${.7 - e * .18})`, outlineW: 3, hollow: true });
   f(ctx, 'fg', { print: true });
+  kin(ctx, '生き様さ', t, at(s.L, 0), { x: W / 2, y: H * .8, size: 430, face: 'loud', fx: 'slam', fill: C.red, under: C.cream, reg: [12, 9], dur: .2 });
 };
 // 28 わたしになれなくても (small): five strips, the middle one in colour
 F[28] = (ctx, t, s) => {

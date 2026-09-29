@@ -1,7 +1,8 @@
 // main.js: picks the scene for a time, paints it, adds the global finish (camera shake, grain, vignette, corner type).
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const LEAD = .18;   // a line's scene starts this long before its first sung character (cut on the pickup)
+const LEAD = .18;
+const PHOTO_SCENES = new Set([12, 13, 14, 15]);   // a line's scene starts this long before its first sung character (cut on the pickup)
 
 // windows: each line owns [start - LEAD, next start - LEAD); gaps longer than 2.5 s become instrumental montage
 function windowAt(t) {
@@ -28,6 +29,8 @@ function draw(t) {
   else if (w.kind === 'montage') sceneMontage(ctx, t, s);
   else (SCENES[w.i] ?? sceneFallback)(ctx, t, s);
   ctx.restore();
+  // stills get a soft bloom and letterbox: film, not graphics
+  if (w.kind === 'line' && PHOTO_SCENES.has(w.i)) { bloom(ctx, .28); letterbox(ctx, 64); }
   // finish: grain, vignette, fade in/out
   grain(ctx, t, .09);
   const v = ctx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05);
@@ -41,6 +44,6 @@ window.MV = {
   ready: false,
   frame(t, q = .92) { draw(t); return canvas.toDataURL('image/jpeg', q); },
 };
-Promise.all([loadSprites(), document.fonts.load(font(100, 900)), document.fonts.load(font(40, 500, FONT_EN))])
+Promise.all([loadSprites(), loadPhotos(), document.fonts.load(font(100, 900)), document.fonts.load(font(40, 500, FONT_EN))])
   .then(() => { MV.ready = true; if (location.hash) draw(+location.hash.slice(1)); })
   .catch(e => console.error('load failed', e));

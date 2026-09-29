@@ -116,3 +116,65 @@ function sceneMontage(ctx, t, s) {
   const kick = pulse(t, .2), side = hitIdx(t) % 2 ? .32 : .68;
   still(ctx, p, W * side, H * .28, 1020 * (1 + .05 * kick), { ghost: 8 * kick + 3 });
 }
+
+// ======== adult look: the protagonist as film stills (full illustrations), camera over them ========
+
+// 12: そう トゲがない. The rose portrait framed on the right, the same image huge and out of focus behind it;
+// the camera slides from the rose up to her eyes. Type set vertically on the left, quiet then heavy.
+SCENES[12] = (ctx, t, s) => {
+  fillBg(ctx, PAL.ink);
+  shot(ctx, 'rose', PHOTOS.rose.face, 1.5, { blur: 34, bright: .45, sat: .7 });
+  const rect = [W * .47, 110, W * .43, H - 220];
+  const k = easeInOut(prog(t, s.t0, s.t1));
+  const kick = pulse(t, .2);
+  shot(ctx, 'rose', [lerp(300, 330, k), lerp(470, 330, k)], lerp(1.35, 1.12, k) * (1 + .04 * kick),
+    { rect, blur: lerp(3, .6, k), ghost: 3 + 6 * kick });
+  ctx.strokeStyle = 'rgba(232,229,224,.5)'; ctx.lineWidth = 2; ctx.strokeRect(rect[0] - 14, rect[1] - 14, rect[2] + 28, rect[3] + 28);
+  const L = s.L, first = { ...L, chars: L.chars.slice(0, 2) }, rest = { ...L, i: L.i + .5, chars: L.chars.slice(3) };
+  popLine(ctx, first, t, { x: W * .34, y: 250, size: 54, weight: 300, color: PAL.fog, vertical: true, align: 'top', tilt: 0, from: 1.2, flash: false });
+  popLine(ctx, rest, t, { x: W * .24, y: 190, size: 150, color: PAL.paper, vertical: true, align: 'top', tilt: 2, from: 1.6, shadow: { dx: 6, dy: 6, color: PAL.roseDeep } });
+  chip(ctx, 'NO THORNS', rect[0] - 14, rect[1] - 34, 18, PAL.rose, PAL.paper);
+};
+
+// 13: 痛々しさが愛しいでしょ？ Rooftop at night; a slow pan from the city lights across to her face, snap zooms on the hits.
+SCENES[13] = (ctx, t, s) => {
+  moveShot(ctx, 'roof', t, s.t0, s.t1, { at: [1150, 330], zoom: 1.35 }, { at: PHOTOS.roof.face, zoom: 1.6 },
+    { kick: 1, ghost: 3, sat: .85 });
+  const g = ctx.createLinearGradient(0, H * .45, 0, H); g.addColorStop(0, 'rgba(10,8,14,0)'); g.addColorStop(1, 'rgba(10,8,14,.75)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  popLine(ctx, s.L, t, { x: 130, y: H - 150, size: fitSize(ctx, s.L.text, W * .72, 118), align: 'left', color: PAL.paper, tilt: 1.5, from: 1.5 });
+  ctx.fillStyle = PAL.fog; ctx.font = font(20, 500, FONT_EN); ctx.textAlign = 'left';
+  ctx.fillText('IT HURTS, AND YOU LOVE IT', 134, H - 110);
+};
+
+// 14: わたしになれないヒト. The room image in three strips: her in the middle, two grey, blurred copies that
+// cannot be her. The strips slam in on the hits.
+SCENES[14] = (ctx, t, s) => {
+  fillBg(ctx, PAL.ink);
+  const sw = W / 3, n = clamp(hitIdx(t) - hitIdx(s.t0) + 1, 1, 3);
+  const order = [1, 0, 2];
+  for (let j = 0; j < n; j++) {
+    const col = order[j], rect = [col * sw + 6, 0, sw - 12, H], me = col === 1;
+    const age = t - (DATA.hits[hitIdx(s.t0) + j] ?? s.t0);
+    const z = lerp(1.25, 1, expoOut(clamp(age / .35)));
+    shot(ctx, 'room', [PHOTOS.room.face[0] + (col - 1) * 60, PHOTOS.room.face[1] + 60], (me ? 1.05 : 1.2) * z,
+      { rect, mono: me ? 0 : 1, blur: me ? 0 : 5, bright: me ? 1 : .6, ghost: me ? 3 : 0 });
+  }
+  popLine(ctx, s.L, t, { x: W / 2, y: H - 120, size: 112, color: PAL.paper, stroke: PAL.ink, strokeW: 16, tilt: 2 });
+};
+
+// 15: 激しくふりほどくの. Hard cuts between the two small panels on every hit, slices tearing on the hits; the
+// characters shake loose and drift outward after they land.
+SCENES[15] = (ctx, t, s) => {
+  const hi = hitIdx(t), id = hi % 2 ? 'lying' : 'sit', P = PHOTOS[id];
+  const kick = pulse(t, .16);
+  shot(ctx, id, P.face, (1.25 + .1 * hash(hi)) * (1 + .08 * kick), { ghost: 4 + 10 * kick, blur: 1.2, sat: .8 });
+  fillBg(ctx, `rgba(10,8,14,${.25 + .2 * kick})`);
+  const L = s.L;
+  popLine(ctx, L, t, {
+    x: W / 2, y: H * .56, size: 150, color: PAL.paper, tilt: 6, from: 1.8,
+    jx: i => { const a = t - L.chars[i][1]; return a > .15 ? Math.sin(i * 2.3) * (a - .15) * 260 : 0; },
+    jy: i => { const a = t - L.chars[i][1]; return a > .15 ? Math.cos(i * 1.7) * (a - .15) * 140 : 0; },
+  });
+  sliceGlitch(ctx, kick, hi, 9);
+};

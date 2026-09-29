@@ -4,12 +4,17 @@ const PHOTO_SRC = { room: 'room.webp', triptych: 'rose_triptych.webp', roof: 'ro
 const PHOTO_IMG = {};
 // crops in source pixels, and the face / points of interest inside each crop
 const PHOTOS = {
-  room:  { src: 'room',     crop: [0, 0, 1536, 1024],    face: [455, 300], hand: [420, 330] },
-  rose:  { src: 'triptych', crop: [2, 2, 722, 1020],     face: [320, 320], rose: [300, 420] },
-  lying: { src: 'triptych', crop: [732, 2, 802, 442],    face: [175, 250] },
-  sit:   { src: 'triptych', crop: [732, 452, 802, 570],  face: [262, 115], legs: [420, 360] },
-  roof:  { src: 'roof',     crop: [0, 0, 1536, 1024],    face: [470, 290], legs: [520, 800] },
+  room:  { src: 'room',     crop: [0, 0, 1536, 1024],    face: [455, 300], hand: [420, 330], monitor: [120, 160], cup: [60, 520],
+           panda: [1400, 560], window: [1350, 150] },
+  rose:  { src: 'triptych', crop: [2, 2, 722, 1020],     face: [320, 320], rose: [300, 420], rings: [230, 500] },
+  lying: { src: 'triptych', crop: [732, 2, 802, 442],    face: [175, 250], hands: [250, 330], panda: [650, 150] },
+  sit:   { src: 'triptych', crop: [732, 452, 802, 570],  face: [262, 115], neon: [570, 60], legs: [420, 360] },
+  roof:  { src: 'roof',     crop: [0, 0, 1536, 1024],    face: [470, 290], moon: [1320, 300], city: [1100, 250] },
 };
+// detail shots for montage cuts: [photo, point, zoom]
+const DETAILS = [['rose', 'rose', 2.2], ['rose', 'rings', 2.4], ['roof', 'moon', 2.0], ['room', 'cup', 2.2], ['sit', 'neon', 1.8],
+  ['lying', 'panda', 1.7], ['room', 'panda', 2.0], ['room', 'monitor', 1.9], ['lying', 'hands', 1.9], ['roof', 'city', 1.6]];
+const CUTS = ['rose', 'roof', 'room', 'lying', 'sit'];
 
 function loadPhotos() {
   return Promise.all(Object.entries(PHOTO_SRC).map(([k, f]) => new Promise((res, rej) => {

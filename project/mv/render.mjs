@@ -1,7 +1,7 @@
 // render.mjs: paints the video frame by frame in headless Chromium, then joins the frames and the song with ffmpeg.
 //   node render.mjs --stills=1.5,12,40 [--w=480] --out=out/check/sheet.jpg   contact sheet of chosen times
 //   node render.mjs --frames [--range=0:30] [--workers=4]                     JPEG frames -> out/frames (resumable)
-//   node render.mjs --encode [--preview] [--out=out/mv.mp4]                   out/frames + song -> MP4 (--preview: small file)
+//   node render.mjs --encode [--preview] [--out=out/mv.mp4]                   out/frames + song -> MP4 (--preview: 720p, small file)
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
@@ -77,7 +77,7 @@ if (args.stills) {
   // start at the first painted frame; the audio is cut from the same time so a partial render stays in sync
   const first = Math.min(...fs.readdirSync(path.join(here, 'out/frames')).filter(f => f.endsWith('.jpg')).map(f => parseInt(f)));
   const p = spawn('ffmpeg', ['-loglevel', 'error', '-stats', '-y', '-framerate', String(FPS), '-start_number', String(first),
-    '-i', path.join(here, 'out/frames/%05d.jpg'), '-ss', (first / FPS).toFixed(4), '-i', AUDIO, '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', args.preview ? '26' : '17', '-pix_fmt', 'yuv420p',
+    '-i', path.join(here, 'out/frames/%05d.jpg'), '-ss', (first / FPS).toFixed(4), '-i', AUDIO, '-map', '0:v', '-map', '1:a', ...(args.preview ? ['-vf', 'scale=1280:-2'] : []), '-c:v', 'libx264', '-preset', 'slow', '-crf', args.preview ? '28' : '17', '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-b:a', '320k', '-shortest', '-movflags', '+faststart', out], { stdio: 'inherit' });
   p.on('close', c => console.log(c ? `ffmpeg failed (${c})` : out));
 } else {

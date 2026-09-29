@@ -1,15 +1,16 @@
 // main.js: picks the scene for a time, paints it, adds the global finish (camera shake, grain, vignette, corner type).
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const LEAD = .18;
-const PHOTO_SCENES = new Set([12, 13, 14, 15]);   // a line's scene starts this long before its first sung character (cut on the pickup)
+const LEAD = .18;   // a line's scene starts this long before its first sung character (cut on the pickup)
 
 // windows: each line owns [start - LEAD, next start - LEAD); gaps longer than 2.5 s become instrumental montage
 function windowAt(t) {
   const Ls = DATA.lines;
   if (t < Ls[0].start - LEAD) return { kind: 'intro', t0: 0, t1: Ls[0].start - LEAD };
+  const last = Ls[Ls.length - 1];
+  if (t >= last.end + .6) return { kind: 'outro', t0: last.end + .6, t1: DATA.duration };
   for (let i = 0; i < Ls.length; i++) {
-    const a = Ls[i].start - LEAD, next = i + 1 < Ls.length ? Ls[i + 1].start - LEAD : DATA.duration;
+    const a = Ls[i].start - LEAD, next = i + 1 < Ls.length ? Ls[i + 1].start - LEAD : last.end + .6;
     if (t < a || t >= next) continue;
     if (next - Ls[i].end > 2.5 && t > Ls[i].end + .6 && i + 1 < Ls.length) return { kind: 'montage', t0: Ls[i].end + .6, t1: next, L: Ls[i] };
     const t1 = Math.min(next, Ls[i].end + (i + 1 < Ls.length ? 2.5 + .6 : 99));
@@ -27,10 +28,11 @@ function draw(t) {
   if (sp) ctx.translate(hr(-1, 1, Math.floor(t * 30)) * 14 * sp, hr(-1, 1, Math.floor(t * 30), 3) * 10 * sp);
   if (w.kind === 'intro') sceneIntro(ctx, t, s);
   else if (w.kind === 'montage') sceneMontage(ctx, t, s);
+  else if (w.kind === 'outro') sceneOutro(ctx, t, s);
   else (SCENES[w.i] ?? sceneFallback)(ctx, t, s);
   ctx.restore();
-  // stills get a soft bloom and letterbox: film, not graphics
-  if (w.kind === 'line' && PHOTO_SCENES.has(w.i)) { bloom(ctx, .28); letterbox(ctx, 64); }
+  // every frame is a film still: soft bloom and letterbox
+  bloom(ctx, .28); letterbox(ctx, 64);
   // finish: grain, vignette, fade in/out
   grain(ctx, t, .09);
   const v = ctx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05);
@@ -44,6 +46,6 @@ window.MV = {
   ready: false,
   frame(t, q = .92) { draw(t); return canvas.toDataURL('image/jpeg', q); },
 };
-Promise.all([loadSprites(), loadPhotos(), document.fonts.load(font(100, 900)), document.fonts.load(font(40, 500, FONT_EN))])
+Promise.all([loadPhotos(), document.fonts.load(font(100, 900)), document.fonts.load(font(40, 500, FONT_EN))])
   .then(() => { MV.ready = true; if (location.hash) draw(+location.hash.slice(1)); })
   .catch(e => console.error('load failed', e));

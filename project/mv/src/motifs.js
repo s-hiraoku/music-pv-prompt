@@ -77,7 +77,7 @@ function moths(ctx, t, cx, cy, n, col) {
   for (let i = 0; i < n; i++) {
     const r = hr(90, 520, i, 1), sp = hr(.4, 1.3, i, 2) * (hash(i, 3) > .5 ? 1 : -1), a = hr(0, 7, i, 4) + t * sp;
     const x = cx + Math.cos(a) * r * 1.3 + Math.sin(t * 2 + i) * 20, y = cy + Math.sin(a) * r * .7 + Math.cos(t * 1.7 + i) * 20;
-    const flap = .35 + .65 * Math.abs(Math.sin(t * 18 + i)), s = hr(10, 22, i, 5);
+    const flap = .35 + .65 * Math.abs(Math.sin(t * 18 + i)), s = hr(16, 34, i, 5);
     ctx.save(); ctx.translate(x, y); ctx.rotate(a + Math.PI / 2 * Math.sign(sp));
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-s, -s * flap, -s * 1.3, s * .2 * flap); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(s, -s * flap, s * 1.3, s * .2 * flap); ctx.closePath(); ctx.fill();
